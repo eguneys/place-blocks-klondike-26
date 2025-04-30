@@ -31,8 +31,9 @@ function grid_key2ij(key: number): XY {
     return [key % _grid_bounds[2], Math.floor(key / _grid_bounds[2])]
 }
 
-function pos_to_ij(x: number, y: number, _w: number, _h: number): XY {
-    return [Math.floor((x - _grid_bounds[0]) / 32), Math.floor((y - _grid_bounds[1]) / 32)]
+
+function pos_to_ij(x: number, y: number, w: number, h: number): XY {
+    return [Math.floor((x + w / 2 - _grid_bounds[0]) / 32), Math.floor((y + h / 2 - _grid_bounds[1]) / 32)]
 }
 
 function ij_to_pos(i: number, j: number): XY {
@@ -84,7 +85,7 @@ function block_drag_box(block: Block): XYWH {
 }
 
 function block_box(block: Block): XYWH {
-    return [block.pos[0] + 8, block.pos[1] + 8, 20, 20]
+    return [block.pos[0] + 6, block.pos[1] + 6, 20, 20]
 }
 
 function cursor_box(cursor: Cursor): XYWH {
@@ -198,7 +199,7 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
     let t = Math.abs(dx)
     let a = Math.floor(t)
 
-    let step = Math.sign(dx) * Math.min(a, 3)
+    let step = Math.sign(dx) * Math.min(a, 2)
 
     block.pos[2] = t - a
 
@@ -218,7 +219,7 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
     t = Math.abs(dy)
     a = Math.floor(t)
 
-    step = Math.sign(dy) * Math.min(a, 3)
+    step = Math.sign(dy) * Math.min(a, 2)
 
     block.pos[3] = t - a
 
@@ -320,6 +321,13 @@ function render_background_in_stencil() {
 }
 
 function render_cursor() {
+
+
+    blocks.forEach(block => {
+        if (block.is_hovering) {
+            //g.draw(...block_box(block), 240, 0, false)
+        }
+    })
 
     g.draw(...cursor, 20, 20, 0, 0, false)
 }
