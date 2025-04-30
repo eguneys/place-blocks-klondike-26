@@ -1,6 +1,6 @@
 import { add_anim, Anim, render_animations, tag_anim, update_animations, xy_anim } from './anim'
 import { DragHandler } from './drag'
-import { box_intersect, XY, XYWH } from './util'
+import { appr, box_intersect, XY, XYWH } from './util'
 import { g } from './webgl/gl_init'
 
 type Cursor = XY
@@ -9,25 +9,54 @@ let drag: DragHandler
 
 type Block = {
     anim: Anim
-    pos: XY
+    pos: XYWH
     is_hovering: boolean
+    vel: XY
 }
 
 let blocks: Block[]
 
 let drag_block: [Block, XY] | undefined
 
+let grid: (Block | undefined)[]
+
 let t: number
 
-function push_block(x: number, y: number) {
+let _grid_bounds: XYWH = [40, 20, 11, 7]
+
+function grid_ij_key(i: number, j: number) {
+    return i + j * _grid_bounds[2]
+}
+function grid_key2ij(key: number): XY {
+    return [key % _grid_bounds[2], Math.floor(key / _grid_bounds[2])]
+}
+
+function pos_to_ij(x: number, y: number, _w: number, _h: number): XY {
+    return [Math.floor((x - _grid_bounds[0]) / 32), Math.floor((y - _grid_bounds[1]) / 32)]
+}
+
+function ij_to_pos(i: number, j: number): XY {
+    return [_grid_bounds[0] + i * 32, _grid_bounds[1] + j * 32]
+}
+
+function push_block(i: number, j: number) {
 
     let anim = add_anim(88, 0, 32, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
     tag_anim(anim, 'idle')
-    blocks.push({
+
+    let x = _grid_bounds[0] + i * 32
+    let y = _grid_bounds[1] + j * 32
+
+    let block: Block = {
         anim,
-        pos: [x, y],
+        pos: [x, y, 0, 0],
+        vel: [0, 0],
         is_hovering: false
-    })
+    }
+
+    blocks.push(block)
+
+    grid[grid_ij_key(i, j)] = block
 }
 
 export function _init() {
@@ -39,27 +68,38 @@ export function _init() {
 
     drag_block = undefined
 
-    for (let i = 0; i < 8; i++) {
-    for (let j = 0; j < 5; j++) {
-        if (i === 0 || j === 0 || i === 7 || j === 4) {
+    grid = []
 
-        push_block(10 + i * 32, 10 + j * 32)
+    for (let i = 0; i <= 10; i++) {
+    for (let j = 0; j <= 6; j++) {
+        if (i === 0 || j === 0 || i === 10 || j === 6) {
+            push_block(i, j)
         }
     }
     }
 }
 
+function block_drag_box(block: Block): XYWH {
+    return [block.pos[0] + 1, block.pos[1] + 1, 30, 30]
+}
+
 function block_box(block: Block): XYWH {
-    return [block.pos[0], block.pos[1], 32, 32]
+    return [block.pos[0] + 8, block.pos[1] + 8, 20, 20]
 }
 
 function cursor_box(cursor: Cursor): XYWH {
     return [cursor[0], cursor[1], 10, 10]
 }
 
-function update_block(block: Block) {
+function update_block(block: Block, delta: number) {
 
-    xy_anim(block.anim, ...block.pos, false)
+    if (drag_block?.[0] === block) {
+    } else {
+        let block_target_pos = ij_to_pos(...grid_key2ij(grid.indexOf(block)))
+        updateSpring(block.pos, block_target_pos)
+    }
+
+    xy_anim(block.anim, block.pos[0], block.pos[1], false)
     if (drag_block?.[0] === block) {
         tag_anim(block.anim, 'drag')
     } else if (block.is_hovering) {
@@ -83,10 +123,10 @@ export function _update(delta: number) {
         cursor = drag.is_hovering
 
         if (drag_block) {
+            let x = cursor[0] + drag_block[1][0]
+            let y = cursor[1] + drag_block[1][1]
 
-            drag_block[0].pos[0] = cursor[0] + drag_block[1][0]
-            drag_block[0].pos[1] = cursor[1] + drag_block[1][1]
-
+            block_pixel_perfect_lerp(drag_block[0], x, y, delta)
         } else {
             blocks.forEach(block => {
                 block.is_hovering = false
@@ -101,7 +141,7 @@ export function _update(delta: number) {
         let is_down = drag.is_down
         if (drag_block === undefined) {
             blocks.forEach(block => {
-                let decay = cursor_hit_decay(block_box(block), is_down)
+                let decay = cursor_hit_decay(block_drag_box(block), is_down)
 
                 if (decay) {
                     drag_block = [block, [decay[2], decay[3]]]
@@ -120,6 +160,88 @@ export function _update(delta: number) {
 
     drag.update(delta)
 }
+
+function updateSpring(position: XYWH, target: XY, stiffness = 0.2) {
+  // Move part of the way toward the target (constraint resolution)
+  position[0] += (target[0] - position[0]) * stiffness;
+  position[1] += (target[1] - position[1]) * stiffness;
+}
+
+function grid_collide(xywh: XYWH) {
+
+    let res: Block[] = []
+    for (let x = 0; x <  xywh[2]; x++) {
+        for (let y = 0; y < xywh[3]; y++) {
+            let [i, j] = pos_to_ij(xywh[0] + x, xywh[1] + y, 0, 0)
+            if (i < 0 || i >= _grid_bounds[2]) {
+                return 'edge'
+            }
+            if (j < 0 || j >= _grid_bounds[3]) {
+                return 'edge'
+            }
+            let g = grid[grid_ij_key(i, j)]
+            if (g !== undefined && !res.includes(g)) {
+                res.push(g)
+            }
+        }
+    }
+    return res
+}
+
+function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: number) {
+
+
+    let dx = appr(block.pos[0] + block.pos[2], x, delta) - block.pos[0]
+
+    dx *= 0.8
+
+    let t = Math.abs(dx)
+    let a = Math.floor(t)
+
+    let step = Math.sign(dx) * Math.min(a, 3)
+
+    block.pos[2] = t - a
+
+    for (let i = 0; i < a; i+= Math.abs(step)) {
+        block.pos[0] += step
+
+        let c = grid_collide(block_box(block))
+        if (c === 'edge' || !(c.length === 0 || (c.length === 1 && c[0] === block))) {
+            block.pos[0] -= step
+            break
+        }
+    }
+    
+    let dy = appr(block.pos[1] + block.pos[3], y, delta) - block.pos[1]
+    dy *= 0.8
+
+    t = Math.abs(dy)
+    a = Math.floor(t)
+
+    step = Math.sign(dy) * Math.min(a, 3)
+
+    block.pos[3] = t - a
+
+    for (let i = 0; i < a; i+= Math.abs(step)) {
+        block.pos[1] += step
+
+        let c = grid_collide(block_box(block))
+        if (c === 'edge' || !(c.length === 0 || (c.length === 1 && c[0] === block))) {
+            block.pos[1] -= step
+            break
+        }
+    }
+
+    let key = grid.indexOf(block)
+    let [new_i, new_j] = pos_to_ij(...block_box(block))
+
+    let new_key = grid_ij_key(new_i, new_j)
+    if (key !== new_key) {
+        grid[key] = undefined
+        grid[new_key] = block
+    }
+}
+
 
 export function _render() {
 
