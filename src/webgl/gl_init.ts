@@ -20,9 +20,12 @@ export type GL = {
     end_render(): void
     flush_to_screen(): void
     clear(): void
+    begin_stencil(): void,
+    begin_stencil_bg(): void,
+    end_stencil(): void
 }
 
-export const g = GL(320, 180)
+export const g = GL(480, 270)
 
 
 export function GL(width: number, height: number): GL {
@@ -32,19 +35,20 @@ export function GL(width: number, height: number): GL {
     canvas.width = width;
     canvas.height = height;
 
-    const gl = canvas.getContext('webgl2', { antialias: false, depth: false })!;
+    const gl = canvas.getContext('webgl2', { antialias: false, depth: false, stencil: true })!;
 
 
     const shader = createShaderProgram(gl, vertexShader, fragmentShader);
     const batch = new SpriteBatch(gl, shader);
     const screenShader = createShaderProgram(gl, zoomVertexShader, zoomFragmentShader);
 
-    gl.clearColor(0, 0, 0, 1)
+    gl.clearColor(130/255, 112/255, 148/255, 1)
     gl.viewport(0, 0, width, height)
 
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
+    gl.enable(gl.STENCIL_TEST)
 
     let texture: WebGLTexture
     let bg_texture: WebGLTexture
@@ -56,7 +60,7 @@ export function GL(width: number, height: number): GL {
     let tiles_t_width: number, tiles_t_height: number
 
 
-    let batch_render_target = createRenderTarget(gl, 320, 180)
+    let batch_render_target = createRenderTarget(gl, width, height)
 
     let fullscreenQuadVAO = initFullscreenQuad(gl)
 
@@ -78,7 +82,23 @@ export function GL(width: number, height: number): GL {
             tiles_t_height = image.height
         },
         clear() {
-            gl.clear(gl.COLOR_BUFFER_BIT)
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
+        },
+        begin_stencil() {
+            gl.clear(gl.STENCIL_BUFFER_BIT)
+            gl.colorMask(false, false, false, false)
+            gl.stencilFunc(gl.ALWAYS, 1, 0xFF)
+            gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE)
+        },
+        begin_stencil_bg() {
+            gl.colorMask(true, true, true, true)
+            gl.stencilFunc(gl.EQUAL, 1, 0xFF)
+            gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP)
+        },
+        end_stencil() {
+            gl.colorMask(true, true, true, true)
+            gl.stencilFunc(gl.ALWAYS, 0, 0xFF)
+            gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP)
         },
         begin_render_bg() {
             gl.bindFramebuffer(gl.FRAMEBUFFER, batch_render_target.framebuffer)
