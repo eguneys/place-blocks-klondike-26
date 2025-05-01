@@ -10,6 +10,7 @@ let drag: DragHandler
 type Block = {
     anim: Anim
     pos: XYWH
+    wh: XY
     is_hovering: boolean
     vel: XY
 }
@@ -33,18 +34,25 @@ function grid_key2ij(key: number): XY {
 
 
 function pos_to_ij(x: number, y: number, w: number, h: number): XY {
-    return [Math.floor((x + w / 4 - _grid_bounds[0]) / 32), Math.floor((y + h / 2 - _grid_bounds[1]) / 32)]
+    return [Math.floor((x - _grid_bounds[0]) / 32), Math.floor((y - _grid_bounds[1]) / 32)]
 }
 
 function ij_to_pos(i: number, j: number): XY {
     return [_grid_bounds[0] + i * 32, _grid_bounds[1] + j * 32]
 }
 
-function push_block(i: number, j: number) {
+function push_block(i: number, j: number, w: number, h: number) {
 
-    //let anim = add_anim(88, 0, 32, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+    let anim: Anim
+    
+    if (w === 1 && h === 1) {
+        anim = add_anim(88, 0, 32, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
 
-    let anim = add_anim(0, 64, 64, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+    } else if (w === 2 && h === 1) {
+        anim = add_anim(0, 64, 64, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+    } else {
+        anim = add_anim(0, 64, 64, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+    }
 
     tag_anim(anim, 'idle')
 
@@ -54,6 +62,7 @@ function push_block(i: number, j: number) {
     let block: Block = {
         anim,
         pos: [x, y, 0, 0],
+        wh: [w, h],
         vel: [0, 0],
         is_hovering: false
     }
@@ -61,7 +70,9 @@ function push_block(i: number, j: number) {
     blocks.push(block)
 
     grid[grid_ij_key(i, j)] = block
-    grid[grid_ij_key(i + 1, j)] = block
+    if (w === 2 && h === 1) {
+        grid[grid_ij_key(i + 1, j)] = block
+    }
 }
 
 export function _init() {
@@ -75,25 +86,27 @@ export function _init() {
 
     grid = []
 
-    for (let i = 0; i <= 10; i++) {
-    for (let j = 0; j <= 6; j++) {
-        if (i === 0 || j === 0 || i === 10 || j === 6) {
-            if (i % 2 === 0) {
-                push_block(i, j)
-                i  =300
-                break
-            }
-        }
+    for (let k = 0; k < 10; k++) {
+        push_block(k, 0, 1, 1)
     }
+    for (let j = 0; j < 9; j+=2) {
+        push_block(j, 1, 2, 1)
     }
+    
 }
 
 function block_drag_box(block: Block): XYWH {
-    return [block.pos[0] + 1, block.pos[1] + 1, 64, 30]
+    return [block.pos[0] + 1, block.pos[1] + 1, 32 * block.wh[0], 30]
 }
 
 function block_box(block: Block): XYWH {
-    return [block.pos[0] + 4, block.pos[1] + 6, 50, 20]
+    let off_x = 4
+    let edge_w = 25
+    if (block.wh[0] === 1) {
+        off_x = 8
+        edge_w = 16
+    }
+    return [block.pos[0] + off_x, block.pos[1] + 6, edge_w * block.wh[0], 20]
 }
 
 function cursor_box(cursor: Cursor): XYWH {
@@ -247,9 +260,15 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
     let new_key = grid_ij_key(new_i, new_j)
     if (key !== new_key) {
         grid[key] = undefined
-        grid[key + 1] = undefined
+
+        if (block.wh[0] === 2 && block.wh[1] === 1) {
+            grid[key + 1] = undefined
+        }
         grid[new_key] = block
-        grid[new_key + 1] = block
+
+        if (block.wh[0] === 2 && block.wh[1] === 1) {
+            grid[new_key + 1] = block
+        }
     }
 }
 
@@ -258,7 +277,11 @@ export function _render() {
 
     g.clear()
 
-    render_block_background_stencil()
+    let b1 = blocks.filter(_ => _.wh[0] === 1 && _.wh[1] === 1)
+    render_block_background_stencil(b1, 216, 0)
+
+    let b2 = blocks.filter(_ => _.wh[0] === 2 && _.wh[1] === 1)
+    render_block_background_stencil(b2, 296, 0)
 
     g.begin_render()
 
@@ -273,7 +296,7 @@ export function _render() {
 }
 
 
-function render_block_background_stencil() {
+function render_block_background_stencil(blocks: Block[], sx: number, sy: number) {
     g.begin_stencil()
 
     g.begin_render()
@@ -288,8 +311,7 @@ function render_block_background_stencil() {
 
     g.begin_render()
 
-
-    render_background_in_stencil()
+    render_background_in_stencil(sx, sy)
 
     g.end_render()
 
@@ -298,7 +320,7 @@ function render_block_background_stencil() {
 
 }
 
-function render_background_in_stencil() {
+function render_background_in_stencil(sx: number, sy: number) {
 
     let gap = 50
     let offset = t * 0.015
@@ -321,7 +343,7 @@ function render_background_in_stencil() {
             x = x % (10 * gap);
             y = y % (10 * gap);
             
-            g.draw(x - gap, y - gap, 64, 64, 296, 0, false);
+            g.draw(x - gap, y - gap, 64, 64, sx, sy, false);
         }
     }
 
