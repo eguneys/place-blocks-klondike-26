@@ -3,12 +3,14 @@ import { Loop } from './loop_input'
 import './style.css'
 import { _init, _render, _update } from './ur.ts'
 import Content from './content'
+import a from './audio'
 
 function app(el: HTMLElement) {
 
   let canvas = g.canvas
 
   Promise.all([
+    a.load(),
     Content.load()
   ]).then(() => {
     g.load_sheet(Content.spritesheet)

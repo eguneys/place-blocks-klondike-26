@@ -2,6 +2,11 @@ import { add_anim, Anim, render_animations, tag_anim, update_animations, xy_anim
 import { DragHandler } from './drag'
 import { appr, box_intersect, XY, XYWH } from './util'
 import { g } from './webgl/gl_init'
+import a from './audio'
+
+let playing_music: (() => void) | undefined
+
+let _music_box: XYWH = [4, 4, 32, 32]
 
 type Cursor = XY
 let cursor: Cursor
@@ -93,7 +98,12 @@ export function _init() {
         push_block(j, 1, 2, 1)
     }
     
+
+    music_anim = add_anim(0, 144, 32, 32, { idle: '0.0-0', hover: '0.1-1', off: '0.2-2', off_hover: '0.3-3' })
+    tag_anim(music_anim, 'idle')
+    xy_anim(music_anim, _music_box[0], _music_box[1], false)
 }
+let music_anim: Anim
 
 function block_drag_box(block: Block): XYWH {
     return [block.pos[0] + 1, block.pos[1] + 1, 32 * block.wh[0], 30]
@@ -137,7 +147,27 @@ function cursor_hit_decay(block: XYWH, is_down: XY) {
     }
 }
 
+let start_music_once = true
+
 export function _update(delta: number) {
+
+    if (drag.is_just_down) {
+
+        if (box_intersect(cursor_box(drag.is_just_down), _music_box)) {
+            if (playing_music) {
+                playing_music()
+                playing_music = undefined
+            } else {
+                playing_music = a.play('main_song', true, 0.5)
+            }
+        } else {
+            if (start_music_once && playing_music === undefined) {
+                start_music_once = false
+                playing_music = a.play('main_song', true, 0.5)
+            }
+        }
+ 
+    }
 
     t += delta
 
@@ -157,6 +187,12 @@ export function _update(delta: number) {
                 }
             })
         }
+
+        if (box_intersect(cursor_box(drag.is_hovering), _music_box)) {
+            tag_anim(music_anim, playing_music === undefined ? 'off_hover' :'hover')
+        } else {
+            tag_anim(music_anim, playing_music === undefined ? 'off': 'idle')
+        }
     }
 
     if (drag.is_down) {
@@ -170,6 +206,9 @@ export function _update(delta: number) {
                 }
             })
         }
+
+
+
     } else {
         if (drag_block) {
             drag_block = undefined
@@ -382,6 +421,7 @@ function render_cursor() {
             //g.draw(...block_drag_box(block), 296, 0, false)
         }
     })
+
 
     g.draw(...cursor, 20, 20, 0, 0, false)
 }
