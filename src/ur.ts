@@ -33,7 +33,7 @@ function grid_key2ij(key: number): XY {
 
 
 function pos_to_ij(x: number, y: number, w: number, h: number): XY {
-    return [Math.floor((x + w / 2 - _grid_bounds[0]) / 32), Math.floor((y + h / 2 - _grid_bounds[1]) / 32)]
+    return [Math.floor((x + w / 4 - _grid_bounds[0]) / 32), Math.floor((y + h / 2 - _grid_bounds[1]) / 32)]
 }
 
 function ij_to_pos(i: number, j: number): XY {
@@ -42,7 +42,10 @@ function ij_to_pos(i: number, j: number): XY {
 
 function push_block(i: number, j: number) {
 
-    let anim = add_anim(88, 0, 32, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+    //let anim = add_anim(88, 0, 32, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+
+    let anim = add_anim(0, 64, 64, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+
     tag_anim(anim, 'idle')
 
     let x = _grid_bounds[0] + i * 32
@@ -58,6 +61,7 @@ function push_block(i: number, j: number) {
     blocks.push(block)
 
     grid[grid_ij_key(i, j)] = block
+    grid[grid_ij_key(i + 1, j)] = block
 }
 
 export function _init() {
@@ -74,25 +78,29 @@ export function _init() {
     for (let i = 0; i <= 10; i++) {
     for (let j = 0; j <= 6; j++) {
         if (i === 0 || j === 0 || i === 10 || j === 6) {
-            push_block(i, j)
+            if (i % 2 === 0) {
+                push_block(i, j)
+                i  =300
+                break
+            }
         }
     }
     }
 }
 
 function block_drag_box(block: Block): XYWH {
-    return [block.pos[0] + 1, block.pos[1] + 1, 30, 30]
+    return [block.pos[0] + 1, block.pos[1] + 1, 64, 30]
 }
 
 function block_box(block: Block): XYWH {
-    return [block.pos[0] + 6, block.pos[1] + 6, 20, 20]
+    return [block.pos[0] + 4, block.pos[1] + 6, 50, 20]
 }
 
 function cursor_box(cursor: Cursor): XYWH {
     return [cursor[0], cursor[1], 10, 10]
 }
 
-function update_block(block: Block, delta: number) {
+function update_block(block: Block, _delta: number) {
 
     if (drag_block?.[0] === block) {
     } else {
@@ -131,7 +139,7 @@ export function _update(delta: number) {
         } else {
             blocks.forEach(block => {
                 block.is_hovering = false
-                if (box_intersect(cursor_box(cursor), block_box(block))) {
+                if (box_intersect(cursor_box(cursor), block_drag_box(block))) {
                     block.is_hovering = true
                 }
             })
@@ -239,7 +247,9 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
     let new_key = grid_ij_key(new_i, new_j)
     if (key !== new_key) {
         grid[key] = undefined
+        grid[key + 1] = undefined
         grid[new_key] = block
+        grid[new_key + 1] = block
     }
 }
 
@@ -268,10 +278,7 @@ function render_block_background_stencil() {
 
     g.begin_render()
     blocks.forEach(block => {
-        let x = block.pos[0] + 8
-        let y = block.pos[1] + 8
-        let w = 32 - 16
-        let h = 32 - 16
+        let [x, y, w, h] = block_box(block)
         g.draw(x, y, w, h, 0, 0, false)
     })
     g.end_render()
@@ -314,7 +321,7 @@ function render_background_in_stencil() {
             x = x % (10 * gap);
             y = y % (10 * gap);
             
-            g.draw(x - gap, y - gap, 64, 64, 216, 0, false);
+            g.draw(x - gap, y - gap, 64, 64, 296, 0, false);
         }
     }
 
@@ -325,7 +332,7 @@ function render_cursor() {
 
     blocks.forEach(block => {
         if (block.is_hovering) {
-            //g.draw(...block_box(block), 240, 0, false)
+            //g.draw(...block_drag_box(block), 296, 0, false)
         }
     })
 
