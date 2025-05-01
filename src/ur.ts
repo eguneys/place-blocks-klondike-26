@@ -286,15 +286,40 @@ export function _render() {
     g.begin_render()
 
     //render_background_in_stencil()
+    render_edges()
 
     render_animations(g)
-
     render_cursor()
 
 
     g.end_render()
 }
 
+function render_edges() {
+
+    g.draw(_grid_bounds[0] - 8, _grid_bounds[1] - 8, 11, 11, 272, 64, false)
+    for (let i = 0; i < _grid_bounds[2] * 32 / 11; i++) {
+        g.draw(_grid_bounds[0] + i * 11, _grid_bounds[1] - 8, 11, 11, 272 + 11, 64, false)
+    }
+
+    g.draw(_grid_bounds[0] + _grid_bounds[2] * 32, _grid_bounds[1]- 8, 11, 11, 272 + 11 + 11, 64, false)
+    for (let i = 0; i < _grid_bounds[3] * 32 / 11; i++) {
+        g.draw(_grid_bounds[0] - 8 , _grid_bounds[1] + i * 11, 11, 11, 272, 64 + 11, false)
+    }
+    for (let i = 0; i < _grid_bounds[3] * 32 / 11; i++) {
+        g.draw(_grid_bounds[0] + _grid_bounds[2] * 32, _grid_bounds[1] + i * 11, 11, 11, 272 + 11 + 11, 64 + 11, false)
+    }
+    for (let i = 0; i < _grid_bounds[2] * 32 / 11; i++) {
+        g.draw(_grid_bounds[0] + i * 11, _grid_bounds[1] + _grid_bounds[3] * 32, 11, 11, 272 + 11, 64 + 11 + 11, false)
+    }
+
+    //bottom left
+    g.draw(_grid_bounds[0] + _grid_bounds[2] * 32, _grid_bounds[1] + _grid_bounds[3] * 32, 11, 11, 272 + 11 + 11, 64 + 11 + 11, false)
+    g.draw(_grid_bounds[0] - 8, _grid_bounds[1] + _grid_bounds[3] * 32, 11, 11, 272, 64 + 11 + 11, false)
+
+
+
+}
 
 function render_block_background_stencil(blocks: Block[], sx: number, sy: number) {
     g.begin_stencil()
