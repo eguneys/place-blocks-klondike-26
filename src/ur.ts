@@ -52,7 +52,8 @@ function push_block(i: number, j: number, w: number, h: number) {
     
     if (w === 1 && h === 1) {
         anim = add_anim(88, 0, 32, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
-
+    } else if (w === 1 && h === 2) {
+        anim = add_anim(144, 104, 32, 64, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
     } else if (w === 2 && h === 1) {
         anim = add_anim(0, 64, 64, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
     } else {
@@ -78,6 +79,10 @@ function push_block(i: number, j: number, w: number, h: number) {
     if (w === 2 && h === 1) {
         grid[grid_ij_key(i + 1, j)] = block
     }
+
+    if (w === 1 && h === 2) {
+        grid[grid_ij_key(i, j + 1)] = block
+    }
 }
 
 export function _init() {
@@ -97,6 +102,9 @@ export function _init() {
     for (let j = 0; j < 9; j+=2) {
         push_block(j, 1, 2, 1)
     }
+    for (let j = 0; j < 9; j += 2) {
+        push_block(j, 2, 1, 2)
+    }
     
 
     music_anim = add_anim(0, 144, 32, 32, { idle: '0.0-0', hover: '0.1-1', off: '0.2-2', off_hover: '0.3-3' })
@@ -106,17 +114,21 @@ export function _init() {
 let music_anim: Anim
 
 function block_drag_box(block: Block): XYWH {
-    return [block.pos[0] + 1, block.pos[1] + 1, 32 * block.wh[0], 30]
+    return [block.pos[0] + 1, block.pos[1] + 1, 30 * block.wh[0], 30 * block.wh[1]]
 }
 
 function block_box(block: Block): XYWH {
     let off_x = 4
     let edge_w = 25
+    let edge_h = 20
     if (block.wh[0] === 1) {
         off_x = 8
         edge_w = 16
+    } 
+    if (block.wh[1] === 2) {
+        edge_h = 25
     }
-    return [block.pos[0] + off_x, block.pos[1] + 6, edge_w * block.wh[0], 20]
+    return [block.pos[0] + off_x, block.pos[1] + 6, edge_w * block.wh[0], edge_h * block.wh[1]]
 }
 
 function cursor_box(cursor: Cursor): XYWH {
@@ -303,11 +315,23 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
         if (block.wh[0] === 2 && block.wh[1] === 1) {
             grid[key + 1] = undefined
         }
+
+
+        if (block.wh[0] === 1 && block.wh[1] === 2) {
+            grid[key + _grid_bounds[2]] = undefined
+        }
+
         grid[new_key] = block
 
         if (block.wh[0] === 2 && block.wh[1] === 1) {
             grid[new_key + 1] = block
         }
+
+        if (block.wh[0] === 1 && block.wh[1] === 2) {
+            grid[new_key + _grid_bounds[2]] = block
+        }
+
+
     }
 }
 
@@ -315,6 +339,9 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
 export function _render() {
 
     g.clear()
+
+    let b0 = blocks.filter(_ => _.wh[0] === 1 && _.wh[1] === 2)
+    render_block_background_stencil(b0, 448, 0)
 
     let b1 = blocks.filter(_ => _.wh[0] === 1 && _.wh[1] === 1)
     render_block_background_stencil(b1, 216, 0)
