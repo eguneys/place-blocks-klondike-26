@@ -73,12 +73,22 @@ function grid_to_level(level: Grid) {
     rules = level.rules
 
 
-    rule_blocks.forEach(_ => remove_anim(_.anim))
+    rule_blocks.forEach(_ => {
+        remove_anim(_.anim)
+        remove_anim(_.icon)
+    })
     rule_blocks = []
 
 
 
-    level.rules.forEach((_rule, i) => {
+    level.rules.forEach((rule, i) => {
+
+        let icon0 = add_anim(0, 232, 32, 32, { 
+            right: '0.0-0',  corners: '0.1-1',  no_top: '0.2-2',  no_center: '0.3-3',  
+            on_the_floor: '1.0-0',  '4x4': '1.1-1',  
+        })
+
+
         let rule0 = add_anim(384, 64, 32, 32, {
             n_zero: '0.0-0', n_one: '0.1-1', n_two: '0.2-2', n_three: '0.3-3',
             n_four: '1.0-0', n_five: '1.1-1', n_six: '1.2-2', n_seven: '1.3-3',
@@ -91,8 +101,12 @@ function grid_to_level(level: Grid) {
         let [x, y] = [i % 2, Math.floor(i / 2)]
 
         xy_anim(rule0, rules_box[0] + x * 40, rules_box[1] + y * 40, false)
+        xy_anim(icon0, rules_box[0] + x * 40, rules_box[1] + y * 40, false)
+
+        tag_anim(icon0, rule.icon)
 
         rule_blocks.push({
+            icon: icon0,
             anim: rule0,
             t_reveal: 0,
             revealed: false,
@@ -103,6 +117,7 @@ function grid_to_level(level: Grid) {
 }
 
 type RuleBlock = {
+    icon: Anim
     anim: Anim
     t_reveal: number
     revealed: boolean

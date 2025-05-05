@@ -114,7 +114,7 @@ export function init_demo_level(): Grid {
 
     let rules: Rules = []
     rules.push({
-        icon: '',
+        icon: 'right',
         color: Yellow,
         progress: RULE_right(Yellow)
     })
@@ -143,7 +143,7 @@ export function init_level1(): Grid {
     let rules: Rules = []
 
     rules.push({
-        icon: '',
+        icon: 'right',
         color: Yellow,
         progress: RULE_right(Yellow)
     })
@@ -169,7 +169,7 @@ export function init_level2(): Grid {
 
     let rules: Rules = []
     rules.push({
-        icon: '',
+        icon: 'corners',
         color: Green,
         progress: RULE_corners4(undefined)
     })
@@ -201,7 +201,7 @@ export function init_level3(): Grid {
     let rules: Rules = []
 
     rules.push({
-        icon: '',
+        icon: 'no_top',
         color: Yellow,
         progress: RULE_n_top(Yellow)
     })
@@ -233,7 +233,7 @@ export function init_level4(): Grid {
     let rules: Rules = []
 
     rules.push({
-        icon: '',
+        icon: 'corners',
         color: Red,
         progress: RULE_corners4(Red)
     })
@@ -262,7 +262,7 @@ export function init_level5(): Grid {
     let rules: Rules = []
 
     rules.push({
-        icon: '',
+        icon: 'no_center',
         color: Blue,
         progress: RULE_not_center
     })
@@ -291,7 +291,7 @@ export function init_level6(): Grid {
     let rules: Rules = []
 
     rules.push({
-        icon: '',
+        icon: 'on_the_floor',
         color: Blue,
         progress: RULE_on_floor
     })
@@ -321,7 +321,7 @@ export function init_level7(): Grid {
     let rules: Rules = []
 
     rules.push({
-        icon: '',
+        icon: '4x4',
         color: Blue,
         progress: RULE_square
     })
@@ -350,7 +350,7 @@ export function init_level_last(): Grid {
     let rules: Rules = []
 
     rules.push({
-        icon: '',
+        icon: '4x4',
         color: Blue,
         progress: RULE_square
     })
