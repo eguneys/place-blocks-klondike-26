@@ -80,8 +80,32 @@ export function block_poss(i: number, j: number, wh: XY) {
     return res
 }
 
+function block_neighbors(xywh: XYWH, wh: XY) {
 
-export const levels = [
+    let res: XY[] = []
+
+    let [x, y] = xywh
+    let [w, h] = wh
+
+    res.push([x - 1, y])
+    res.push([x - 1, y + 1])
+
+    res.push([x + w, y])
+    res.push([x + w, y + 1])
+
+    res.push([x, y + h])
+    res.push([x + 1, y + h])
+
+    res.push([x + w, y])
+    res.push([x + w, y + 1])
+
+
+
+
+    return res
+}
+
+export let levels = [
     init_level3,
     init_level2,
     init_level1,
@@ -94,6 +118,43 @@ export const levels = [
     //init_level_last,
     init_demo_level
 ]
+
+levels = [
+    init_level_b1
+]
+
+
+export function init_level_b1(): Grid {
+
+    let tiles: Tiles = []
+
+
+    for (let i = 1; i < 21; i+=3) {
+
+        for (let j = 1; j < 12; j += 3) {
+            tiles[ij_to_key(i, j + (i % 2 === 0 ? 1 : 0))] = Yellow
+        }
+    }
+
+    let rules: Rules = []
+
+    rules.push({
+        icon: 'one_group',
+        color: Yellow,
+        progress: RULE_one_group(Yellow)
+    })
+
+
+
+    return {
+        name: 'One Group',
+        world: [2, 1],
+        tiles,
+        rules
+    }
+}
+
+
 
 
 export function init_demo_level(): Grid {
@@ -366,6 +427,55 @@ export function init_level_last(): Grid {
 
 
 
+const RULE_one_group = (color: Tile) => (tiles: Tiles) => {
+
+        let [blocks, _all] = tiles_to_blocks(tiles)
+
+
+        let blues = blocks.filter(_ => _[2] === color)
+
+
+        if (blues.length === 0) {
+            return undefined
+        }
+
+        let wh = tile_wh(color)
+
+        function is_neighbor_to_group(blocks: XYWH[], block: XYWH) {
+            let neighbors = block_neighbors(block, wh)
+            return blocks.find(_ => neighbors.some(n => n[0] === _[0] && n[1] === _[1]))
+        }
+
+        function find_groups(blocks: XYWH[], res: XYWH[][]) {
+            while (blocks.length > 0) {
+                let block = blocks.pop()!
+
+                let existing = res.find(_ => _.find(_ => _ === block))
+
+                if (existing) {
+                    continue
+                }
+
+                let is_neighbor = res.find(_ => is_neighbor_to_group(_, block))
+
+                if (is_neighbor) {
+                    is_neighbor.push(block)
+                    continue
+                }
+
+                res = find_groups(blocks, [...res, [block]])
+            }
+            return res
+        }
+
+        let res: XYWH[][] = find_groups(blocks.slice(0), [])
+
+        return - (res.length - 1) / blocks.length
+    }
+
+
+
+
 
 const RULE_right = (color: Tile) => (tiles: Tiles) => {
     for (let i = width - 1; i >= 0; i--) {
@@ -512,7 +622,7 @@ const RULE_square = (tiles: Tiles) => {
 
 
 
-function tiles_to_blocks(tiles: Tiles) {
+function tiles_to_blocks(tiles: Tiles): [XYWH[], XYWH[]] {
     let res: XYWH[] = []
     let skip_tiles: XYWH[] = []
     for (let i = 0; i < width; i++) {

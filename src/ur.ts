@@ -86,6 +86,7 @@ function grid_to_level(level: Grid) {
             zero: '0.0-0',
             right: '0.1-1',  corners: '0.2-2',  no_top: '0.3-3',  no_center: '1.0-0',  
             on_the_floor: '1.1-1',  '4x4': '1.2-2',  
+            one_group: '1.3-3'
         })
 
 
