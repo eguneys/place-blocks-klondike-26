@@ -4,6 +4,7 @@ import './style.css'
 import { _init, _render, _update } from './ur.ts'
 import Content from './content'
 import a from './audio'
+import { f } from './canvas.ts'
 
 function app(el: HTMLElement) {
 
@@ -26,6 +27,7 @@ function app(el: HTMLElement) {
   content.classList.add('content')
 
   content.appendChild(canvas)
+  content.appendChild(f.canvas)
   el.appendChild(content)
 }
 

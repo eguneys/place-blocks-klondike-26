@@ -3,6 +3,7 @@ import { DragHandler } from './drag'
 import { appr, box_intersect, XY, XYWH } from './util'
 import { g } from './webgl/gl_init'
 import a from './audio'
+import { f } from './canvas'
 
 let playing_music: (() => void) | undefined
 
@@ -28,7 +29,7 @@ let grid: (Block | undefined)[]
 
 let t: number
 
-let _grid_bounds: XYWH = [40, 20, 11, 7]
+let _grid_bounds: XYWH = [40, 32, 11, 7]
 
 function grid_ij_key(i: number, j: number) {
     return i + j * _grid_bounds[2]
@@ -38,7 +39,7 @@ function grid_key2ij(key: number): XY {
 }
 
 
-function pos_to_ij(x: number, y: number, w: number, h: number): XY {
+function pos_to_ij(x: number, y: number, _w: number, _h: number): XY {
     return [Math.floor((x - _grid_bounds[0]) / 32), Math.floor((y - _grid_bounds[1]) / 32)]
 }
 
@@ -56,6 +57,8 @@ function push_block(i: number, j: number, w: number, h: number) {
         anim = add_anim(144, 104, 32, 64, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
     } else if (w === 2 && h === 1) {
         anim = add_anim(0, 64, 64, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+    } else if (w === 2 && h === 2) {
+        anim = add_anim(0, 168, 64, 64, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
     } else {
         anim = add_anim(0, 64, 64, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
     }
@@ -83,6 +86,12 @@ function push_block(i: number, j: number, w: number, h: number) {
     if (w === 1 && h === 2) {
         grid[grid_ij_key(i, j + 1)] = block
     }
+
+    if (w === 2 && h === 2) {
+        grid[grid_ij_key(i + 1, j)] = block
+        grid[grid_ij_key(i, j + 1)] = block
+        grid[grid_ij_key(i + 1, j + 1)] = block
+    }
 }
 
 export function _init() {
@@ -105,9 +114,12 @@ export function _init() {
     for (let j = 0; j < 9; j += 2) {
         push_block(j, 2, 1, 2)
     }
+     for (let j = 0; j < 9; j += 2) {
+        push_block(j, 4, 2, 2)
+    }
     
 
-    music_anim = add_anim(0, 144, 32, 32, { idle: '0.0-0', hover: '0.1-1', off: '0.2-2', off_hover: '0.3-3' })
+    music_anim = add_anim(0, 112, 32, 32, { idle: '0.0-0', hover: '0.1-1', off: '0.2-2', off_hover: '0.3-3' })
     tag_anim(music_anim, 'idle')
     xy_anim(music_anim, _music_box[0], _music_box[1], false)
 }
@@ -118,6 +130,7 @@ function block_drag_box(block: Block): XYWH {
 }
 
 function block_box(block: Block): XYWH {
+    let off_y = 0
     let off_x = 4
     let edge_w = 25
     let edge_h = 20
@@ -128,7 +141,14 @@ function block_box(block: Block): XYWH {
     if (block.wh[1] === 2) {
         edge_h = 25
     }
-    return [block.pos[0] + off_x, block.pos[1] + 6, edge_w * block.wh[0], edge_h * block.wh[1]]
+    if (block.wh[1] === 2 && block.wh[0] === 2) {
+
+        off_y = 4
+        off_x = 8
+        edge_w = 24
+        edge_h = 22
+    }
+    return [block.pos[0] + off_x, off_y + block.pos[1] + 6, edge_w * block.wh[0], edge_h * block.wh[1]]
 }
 
 function cursor_box(cursor: Cursor): XYWH {
@@ -309,6 +329,7 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
     let [new_i, new_j] = pos_to_ij(...block_box(block))
 
     let new_key = grid_ij_key(new_i, new_j)
+    console.log(new_i, new_j)
     if (key !== new_key) {
         grid[key] = undefined
 
@@ -320,6 +341,13 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
         if (block.wh[0] === 1 && block.wh[1] === 2) {
             grid[key + _grid_bounds[2]] = undefined
         }
+        if (block.wh[0] === 2 && block.wh[1] === 2) {
+            grid[key + _grid_bounds[2]] = undefined
+            grid[key + 1] = undefined
+            grid[key + _grid_bounds[2] + 1] = undefined
+        }
+
+
 
         grid[new_key] = block
 
@@ -331,6 +359,15 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
             grid[new_key + _grid_bounds[2]] = block
         }
 
+        if (block.wh[0] === 2 && block.wh[1] === 2) {
+            grid[new_key + _grid_bounds[2]] = block
+            grid[new_key + 1] = block
+            grid[new_key + _grid_bounds[2] + 1] = block
+        }
+
+
+        console.log(grid)
+
 
     }
 }
@@ -339,6 +376,10 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
 export function _render() {
 
     g.clear()
+
+    let bo = blocks.filter(_ => _.wh[0] === 2 && _.wh[1] === 2)
+    render_block_background_stencil(bo, 368, 0)
+
 
     let b0 = blocks.filter(_ => _.wh[0] === 1 && _.wh[1] === 2)
     render_block_background_stencil(b0, 448, 0)
@@ -359,6 +400,11 @@ export function _render() {
 
 
     g.end_render()
+
+    f.clear()
+
+    f.text('1-1.', _grid_bounds[0] * 4 + _grid_bounds[2] * 16 * 4, 32, 64, '#dff6f5', 'right')
+    f.text('Right', 10 + _grid_bounds[0] * 4 + _grid_bounds[2] * 16 * 4, 32, 64, '#f4b41b', 'left')
 }
 
 function render_edges() {
