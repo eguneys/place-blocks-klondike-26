@@ -4,7 +4,7 @@ import { appr, box_intersect, XY, XYWH } from './util'
 import { g } from './webgl/gl_init'
 import a from './audio'
 import { f } from './canvas'
-import { Blue, Green, Grid, ij_to_key, init_demo_level, init_level1, Red, Rules, Tile, Tiles, Yellow } from './grid'
+import { block_poss, Blue, Green, Grid, ij_to_key, init_demo_level, init_level1, init_level2, Red, Rules, Tile, Tiles, Yellow } from './grid'
 
 
 let tiles: Tiles
@@ -22,10 +22,10 @@ function grid_to_tiles() {
                     tile = Yellow
                 }
                 if (block.wh[0] === 1 && block.wh[1] === 2) {
-                    tile = Blue
+                    tile = Green
                 }
                 if (block.wh[0] === 2 && block.wh[1] === 1) {
-                    tile = Green
+                    tile = Blue
                 }
                 if (block.wh[0] === 2 && block.wh[1] === 2) {
                     tile = Red
@@ -77,9 +77,13 @@ function grid_to_level(level: Grid) {
 
 
     let rule0 = add_anim(384, 64, 32, 32, { 
-        zero: '0.0-0', one: '0.1-1', two: '0.2-2', three: '0.3-3', 
-        four: '1.0-0', five: '1.1-1', six: '1.2-2', seven: '1.3-3', 
-        eight: '2.0-0', check: '333ms2.1-3'
+
+        n_zero: '0.0-0', n_one: '0.1-1', n_two: '0.2-2', n_three: '0.3-3', 
+        n_four: '1.0-0', n_five: '1.1-1', n_six: '1.2-2', n_seven: '1.3-3', 
+        n_eight: '2.0-0',
+        zero: '2.1-1', one: '2.2-2', two: '2.3-3', three: '4.0-0', 
+        four: '4.1-1', five: '4.2-2', six: '4.3-3', seven: '5.0-0', 
+        eight: '5.1-1', check: '333ms4.2-3,5.0-0'
     })
 
     xy_anim(rule0, rules_box[0], rules_box[1], false)
@@ -202,43 +206,14 @@ function push_block(i: number, j: number, w: number, h: number) {
 }
 
 
-function block_poss(i: number, j: number, wh: XY) {
-
-    let res: XY[] = []
-    function push_tile(i: number, j: number) {
-        res.push([i, j])
-        res.push([i + 1, j + 1])
-        res.push([i + 1, j])
-        res.push([i, j + 1])
-    }
-
-
-    push_tile(i, j)
-
-    if (wh[0] === 2 && wh[1] === 1){
-        push_tile(i + 2, j)
-    }
-    if (wh[0] === 1 && wh[1] === 2) {
-        push_tile(i, j + 2)
-    }
-    if (wh[0] === 2 && wh[1] === 2) {
-        push_tile(i + 2, j + 2)
-        push_tile(i + 2, j)
-        push_tile(i, j + 2)
-    }
-
-    return res
-}
-
 export function _init() {
     t = 0
     cursor = [0, 0]
     drag = DragHandler(g.canvas)
 
-    //init_demo_level()
-
-    let l1 = init_demo_level()
-    //let l1 = init_level1()
+    let l1 = init_level1()
+    l1 = init_demo_level()
+    //l1 = init_level2()
 
     grid_to_level(l1)
 
@@ -386,16 +361,17 @@ export function _update(delta: number) {
 function update_rule_block(block: RuleBlock, i: number, delta: number) {
     let rule = rules[i]
 
-    let pt = rule.progress(tiles)
-    let i_tag = Math.floor(pt * 8)
+    let pt = rule.progress(tiles)!
+    let n_tag = (pt < 0 || Object.is(pt, -0)) ? 'n_' : ''
+    let i_tag = Math.round(pt * 8)
 
     const tags = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']
 
-    if (i_tag < 8) {
-        tag_anim(block.anim, tags[i_tag])
+    if (!Object.is(pt, -0) && pt < 8) {
+        tag_anim(block.anim, n_tag + tags[Math.abs(i_tag)])
     }
 
-    if (block.t_reveal === 0 && i_tag === 8) {
+    if (block.t_reveal === 0 && (pt !== -1) && (i_tag === 8 || (Object.is(pt, -0)))) {
         block.t_reveal = 1000
         tag_anim(block.anim, 'check')
     }
