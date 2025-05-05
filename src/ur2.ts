@@ -317,7 +317,6 @@ export function _update(delta: number) {
         }
     }
 
-    //grid_to_tiles()
     rule_blocks.forEach((block, i) => update_rule_block(block, i, delta))
 
 
@@ -452,6 +451,9 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
 
         old_poss.forEach(_ => grid[ij2key(..._)] = undefined)
         new_poss.forEach(_ => grid[ij2key(..._)] = block)
+
+
+        level.ground.key_new_key(key, new_key)
     }
 }
 

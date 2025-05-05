@@ -1,12 +1,11 @@
 import { XY } from "./util"
 
-export const Empty = 0
 export const Yellow = 1
 export const Blue = 2
 export const Green = 3
 export const Red = 4
 
-export type Tile = typeof Empty | typeof Yellow | typeof Blue | typeof Green | typeof Red
+export type Tile = typeof Yellow | typeof Blue | typeof Green | typeof Red
 
 export const Width = 22
 export const Height = 14
@@ -65,15 +64,15 @@ export function block_tiles(x: number, y: number, wh: XY): XY[] {
     }
     push_xy(x, y)
     if (wh[0] === 2 && wh[1] === 1) {
-        push_xy(x + 1, y)
+        push_xy(x + 2, y)
     }
     if (wh[0] === 1 && wh[1] === 2) {
-        push_xy(x, y + 1)
+        push_xy(x, y + 2)
     }
     if (wh[0] === 2 && wh[1] === 2) {
-        push_xy(x + 1, y)
-        push_xy(x, y + 1)
-        push_xy(x + 1, y + 1)
+        push_xy(x + 2, y)
+        push_xy(x, y + 2)
+        push_xy(x + 2, y + 2)
     }
     return res
 }
@@ -106,6 +105,11 @@ export class Ground {
         block_tiles(x, y, block.wh).map(_ => ij2key(..._)).forEach(key =>
             this.tiles[key] = block
         )
+        block.xy = [x, y]
+    }
+
+    key_new_key(key: number, new_key: number) {
+        this.move_block(this.tiles[key]!, ...key2ij(new_key))
     }
 
     get_blocks(xys: XY[]) {
