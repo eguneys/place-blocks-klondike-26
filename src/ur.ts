@@ -74,7 +74,6 @@ function grid_to_level(level: Grid) {
 
 
     rule_blocks.forEach(_ => {
-        remove_anim(_.anim)
         remove_anim(_.icon)
     })
     rule_blocks = []
@@ -84,44 +83,36 @@ function grid_to_level(level: Grid) {
     level.rules.forEach((rule, i) => {
 
         let icon0 = add_anim(0, 232, 32, 32, { 
-            right: '0.0-0',  corners: '0.1-1',  no_top: '0.2-2',  no_center: '0.3-3',  
-            on_the_floor: '1.0-0',  '4x4': '1.1-1',  
+            zero: '0.0-0',
+            right: '0.1-1',  corners: '0.2-2',  no_top: '0.3-3',  no_center: '1.0-0',  
+            on_the_floor: '1.1-1',  '4x4': '1.2-2',  
         })
 
-
-        let rule0 = add_anim(384, 64, 32, 32, {
-            n_zero: '0.0-0', n_one: '0.1-1', n_two: '0.2-2', n_three: '0.3-3',
-            n_four: '1.0-0', n_five: '1.1-1', n_six: '1.2-2', n_seven: '1.3-3',
-            n_eight: '2.0-0',
-            zero: '2.1-1', one: '2.2-2', two: '2.3-3', three: '3.0-0',
-            four: '3.1-1', five: '3.2-2', six: '3.3-3', seven: '4.0-0',
-            eight: '4.1-1', check: '333ms4.2-3,5.0-0'
-        })
 
         let [x, y] = [i % 2, Math.floor(i / 2)]
-
-        xy_anim(rule0, rules_box[0] + x * 40, rules_box[1] + y * 40, false)
-        xy_anim(icon0, rules_box[0] + x * 40, rules_box[1] + y * 40, false)
+        x = rules_box[0] + x * 40 - 2
+        y = rules_box[1] + y * 40 - 2
+        xy_anim(icon0, x, y, false)
 
         tag_anim(icon0, rule.icon)
 
         rule_blocks.push({
+            xy: [x, y],
             icon: icon0,
-            anim: rule0,
             t_reveal: 0,
             revealed: false,
-            is_completed: false
+            i_progress: 0
         })
     })
 
 }
 
 type RuleBlock = {
+    xy: XY,
     icon: Anim
-    anim: Anim
     t_reveal: number
     revealed: boolean
-    is_completed: boolean
+    i_progress: number
 }
 
 let rule_blocks: RuleBlock[]
@@ -379,7 +370,7 @@ export function _update(delta: number) {
 
 
     if (drag.is_up) {
-        if (!level_completed && rule_blocks.every(_ => _.is_completed)) {
+        if (!level_completed && rule_blocks.every(_ => _.i_progress === 1 || Object.is(-0, _.i_progress))) {
             level_completed = true
         }
     }
@@ -398,23 +389,16 @@ export function _update(delta: number) {
 function update_rule_block(block: RuleBlock, i: number, delta: number) {
     let rule = rules[i]
 
-    let pt = rule.progress(tiles)!
-    let n_tag = (pt < 0 || Object.is(pt, -0)) ? 'n_' : ''
-    let i_tag = Math.floor(pt * 8)
+    block.i_progress = rule.progress(tiles)!
 
-    console.log(pt, i_tag)
-    let is_completed = (pt !== -1) && (i_tag === 8 || (Object.is(pt, -0)))
+    if (block.t_reveal === 0 && !block.revealed) {
 
-    const tags = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']
-
-    block.is_completed = is_completed
-    if (!is_completed) {
-        tag_anim(block.anim, n_tag + tags[Math.abs(i_tag)])
-    }
-
-    if (block.t_reveal === 0 && is_completed) {
-        block.t_reveal = 1000
-        tag_anim(block.anim, 'check')
+        if (block.i_progress > 0.5) {
+            block.t_reveal = 200
+        }
+        if (block.i_progress < 0 && block.i_progress > -0.5) {
+            block.t_reveal = 200
+        }
     }
 
     if (block.t_reveal > 0) {
@@ -423,6 +407,13 @@ function update_rule_block(block: RuleBlock, i: number, delta: number) {
         if (block.t_reveal === 0) {
             block.revealed = true
         }
+    }
+
+
+    if (block.revealed) {
+        tag_anim(block.icon, rule.icon)
+    } else {
+        tag_anim(block.icon, 'zero')
     }
 }
 
@@ -536,6 +527,10 @@ export function _render() {
     render_edges()
 
     render_animations(g)
+
+    rule_blocks.forEach(block => render_rule_block(block))
+
+
     render_cursor()
 
 
@@ -547,6 +542,40 @@ export function _render() {
     let yellow = '#f4b41b'
     f.text(`${world[0]}-${world[1]}.`, _grid_bounds[0] * 4 + _grid_bounds[2] * 8 * 4, 32, 64, yellow, 'right')
     f.text(name, 10 + _grid_bounds[0] * 4 + _grid_bounds[2] * 8 * 4, 32, 64, white, 'left')
+}
+
+function render_rule_block(block: RuleBlock) {
+
+    let [x, y] = block.xy
+    if (Object.is(block.i_progress, -0)) {
+        for (let j = 0; j < 3; j++) {
+        for (let i = 0; i < 5; i++) {
+                let o_sx = 4
+                let o_sy = 4
+                g.draw(x + i * 5 + 4, j * 5 + y + 30, 4, 4, 328 + o_sx, 64 + o_sy, false)
+            }
+        }
+    }else if (block.i_progress < 0) {
+        for (let j = 0; j < 3; j++) {
+        for (let i = 0; i < 5; i++) {
+                let o_sx = (i + j * 5) < -block.i_progress * 16 ? 4: 0
+                let o_sy = (i + j * 5) < -block.i_progress * 16 ? 0: 4
+                g.draw(x + i * 5 + 4, j * 5 + y + 30, 4, 4, 328 + o_sx, 64 + o_sy, false)
+            }
+        }
+    } else {
+        for (let j = 0; j < 3; j++) {
+        for (let i = 0; i < 5; i++) {
+                let o_sx = (i + j * 5) < block.i_progress * 16 ? 4: 0
+                let o_sy = (i + j * 5) < block.i_progress * 16 ? 4: 0
+                g.draw(x + i * 5 + 4, j * 5 + y + 30, 4, 4, 328 + o_sx, 64 + o_sy, false)
+            }
+        }
+    }
+
+    if (Object.is(block.i_progress, -0) || block.i_progress === 1) {
+        g.draw(x + 4, y + 30 - 1, 24, 18, 416, 239,  false)
+    }
 }
 
 function render_edges() {

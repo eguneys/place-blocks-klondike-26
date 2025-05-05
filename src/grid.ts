@@ -82,6 +82,7 @@ export function block_poss(i: number, j: number, wh: XY) {
 
 
 export const levels = [
+    init_level3,
     init_level2,
     init_level1,
     init_level2,
