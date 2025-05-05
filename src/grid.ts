@@ -80,7 +80,7 @@ const rule1: Rule = {
     icon: '',
     color: 'yellow',
     progress(tiles: Tiles) {
-        for (let i = 11; i >= 0; i--) {
+        for (let i = 10; i >= 0; i--) {
             for (let j = 0; j < 5; j++) {
                 let key = ij_to_key(i, j)
                 if (tiles[key] === Yellow) {

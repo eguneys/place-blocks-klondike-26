@@ -60,3 +60,10 @@ export function arr_shuffle<A>(array: Array<A>) {
   return array
 }
 
+export function daily_seed() {
+  const now = new Date();
+  const utcMidnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const dayIndex = utcMidnight / 86400000;
+
+  return dayIndex
+}

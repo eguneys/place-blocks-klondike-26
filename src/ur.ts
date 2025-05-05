@@ -4,9 +4,40 @@ import { appr, box_intersect, XY, XYWH } from './util'
 import { g } from './webgl/gl_init'
 import a from './audio'
 import { f } from './canvas'
-import { Blue, Green, Grid, ij_to_key, init_demo_level, init_level1, Red, Rules, Yellow } from './grid'
+import { Blue, Green, Grid, ij_to_key, init_level1, Red, Rules, Tile, Tiles, Yellow } from './grid'
 
 
+let tiles: Tiles
+
+function grid_to_tiles() {
+    tiles = []
+    for (let i = 0; i < 11; i++) {
+        for (let j =0; j < 5; j++) {
+            let tile: Tile | undefined = undefined
+
+            let block = grid[ij_to_key(i, j)]
+
+            if (block) {
+                if (block.wh[0] === 1 && block.wh[1] === 1) {
+                    tile = Yellow
+                }
+                if (block.wh[0] === 1 && block.wh[1] === 2) {
+                    tile = Blue
+                }
+                if (block.wh[0] === 2 && block.wh[1] === 1) {
+                    tile = Green
+                }
+                if (block.wh[0] === 2 && block.wh[1] === 2) {
+                    tile = Red
+                }
+            }
+
+            if (tile) {
+                tiles[ij_to_key(i, j)] = tile
+            }
+        }
+    }
+}
 
 
 function grid_to_level(level: Grid) {
@@ -38,12 +69,40 @@ function grid_to_level(level: Grid) {
 
 
     rules = level.rules
+
+    // TODO cleanup anims
+
+    rule_blocks = []
+
+
+
+    let rule0 = add_anim(384, 64, 32, 32, { 
+        zero: '0.0-0', one: '0.1-1', two: '0.2-2', three: '0.3-3', 
+        four: '1.0-0', five: '1.1-1', six: '1.2-2', seven: '1.3-3', 
+        eight: '2.0-0', check: '333ms2.1-3'
+    })
+
+    xy_anim(rule0, rules_box[0], rules_box[1], false)
+
+    rule_blocks.push({
+        anim: rule0,
+        t_reveal: 0
+    })
+
 }
+
+type RuleBlock = {
+    anim: Anim
+    t_reveal: number
+}
+
+let rule_blocks: RuleBlock[]
 
 
 
 let rules: Rules
 
+let rules_box: XYWH = [404, 20, 0, 0]
 
 
 let playing_music: (() => void) | undefined
@@ -135,12 +194,10 @@ function push_block(i: number, j: number, w: number, h: number) {
     }
 }
 
-
 export function _init() {
     t = 0
     cursor = [0, 0]
     drag = DragHandler(g.canvas)
-
 
     //init_demo_level()
 
@@ -276,11 +333,35 @@ export function _update(delta: number) {
         }
     }
 
+    grid_to_tiles()
+    rule_blocks.forEach((block, i) => update_rule_block(block, i, delta))
     blocks.forEach(update_block)
 
     update_animations(delta)
 
     drag.update(delta)
+}
+
+function update_rule_block(block: RuleBlock, i: number, delta: number) {
+    let rule = rules[i]
+
+    let pt = rule.progress(tiles)
+    let i_tag = Math.floor(pt * 8)
+
+    const tags = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']
+
+    if (i_tag < 8) {
+        tag_anim(block.anim, tags[i_tag])
+    }
+
+    if (block.t_reveal === 0 && i_tag === 8) {
+        block.t_reveal = 1000
+        tag_anim(block.anim, 'check')
+    }
+
+    if (block.t_reveal > 0) {
+        block.t_reveal = appr(block.t_reveal, 0, delta)
+    }
 }
 
 function updateSpring(position: XYWH, target: XY, stiffness = 0.2) {
@@ -358,7 +439,6 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
     let [new_i, new_j] = pos_to_ij(...block_box(block))
 
     let new_key = grid_ij_key(new_i, new_j)
-    console.log(new_i, new_j)
     if (key !== new_key) {
         grid[key] = undefined
 
@@ -393,11 +473,6 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
             grid[new_key + 1] = block
             grid[new_key + _grid_bounds[2] + 1] = block
         }
-
-
-        console.log(grid)
-
-
     }
 }
 
