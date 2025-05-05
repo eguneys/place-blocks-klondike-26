@@ -4,6 +4,47 @@ import { appr, box_intersect, XY, XYWH } from './util'
 import { g } from './webgl/gl_init'
 import a from './audio'
 import { f } from './canvas'
+import { Blue, Green, Grid, ij_to_key, init_demo_level, init_level1, Red, Rules, Yellow } from './grid'
+
+
+
+
+function grid_to_level(level: Grid) {
+
+    blocks = []
+
+    drag_block = undefined
+    grid = []
+
+
+
+    for (let i = 0; i < 11; i++) {
+        for (let j = 0; j < 5; j++) {
+            let tile = level.tiles[ij_to_key(i, j)]
+            if (tile === Yellow) {
+                push_block(i, j, 1, 1)
+            }
+            if (tile === Green) {
+                push_block(i, j, 1, 2)
+            }
+            if (tile === Blue) {
+                push_block(i, j, 2, 1)
+            }
+            if (tile === Red) {
+                push_block(i, j, 2, 2)
+            }
+        }
+    }
+
+
+    rules = level.rules
+}
+
+
+
+let rules: Rules
+
+
 
 let playing_music: (() => void) | undefined
 
@@ -94,30 +135,18 @@ function push_block(i: number, j: number, w: number, h: number) {
     }
 }
 
+
 export function _init() {
     t = 0
     cursor = [0, 0]
     drag = DragHandler(g.canvas)
 
-    blocks = []
 
-    drag_block = undefined
+    //init_demo_level()
 
-    grid = []
+    let l1 = init_level1()
 
-    for (let k = 0; k < 10; k++) {
-        push_block(k, 0, 1, 1)
-    }
-    for (let j = 0; j < 9; j+=2) {
-        push_block(j, 1, 2, 1)
-    }
-    for (let j = 0; j < 9; j += 2) {
-        push_block(j, 2, 1, 2)
-    }
-     for (let j = 0; j < 9; j += 2) {
-        push_block(j, 4, 2, 2)
-    }
-    
+    grid_to_level(l1)
 
     music_anim = add_anim(0, 112, 32, 32, { idle: '0.0-0', hover: '0.1-1', off: '0.2-2', off_hover: '0.3-3' })
     tag_anim(music_anim, 'idle')
