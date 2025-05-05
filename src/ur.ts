@@ -1,10 +1,10 @@
-import { add_anim, Anim, render_animations, tag_anim, update_animations, xy_anim } from './anim'
+import { add_anim, Anim, remove_anim, render_animations, tag_anim, update_animations, xy_anim } from './anim'
 import { DragHandler } from './drag'
 import { appr, box_intersect, XY, XYWH } from './util'
 import { g } from './webgl/gl_init'
 import a from './audio'
 import { f } from './canvas'
-import { block_poss, Blue, Green, Grid, ij_to_key, init_demo_level, init_level1, init_level2, Red, Rules, Tile, Tiles, Yellow } from './grid'
+import { block_poss, Blue, Green, Grid, ij_to_key, levels, Red, Rules, Tile, Tiles, Yellow } from './grid'
 
 
 let tiles: Tiles
@@ -42,6 +42,8 @@ function grid_to_tiles() {
 
 function grid_to_level(level: Grid) {
 
+    blocks.forEach(_ => remove_anim(_.anim))
+
     blocks = []
 
     drag_block = undefined
@@ -70,27 +72,32 @@ function grid_to_level(level: Grid) {
 
     rules = level.rules
 
-    // TODO cleanup anims
 
+    rule_blocks.forEach(_ => remove_anim(_.anim))
     rule_blocks = []
 
 
 
-    let rule0 = add_anim(384, 64, 32, 32, { 
+    level.rules.forEach((_rule, i) => {
+        let rule0 = add_anim(384, 64, 32, 32, {
+            n_zero: '0.0-0', n_one: '0.1-1', n_two: '0.2-2', n_three: '0.3-3',
+            n_four: '1.0-0', n_five: '1.1-1', n_six: '1.2-2', n_seven: '1.3-3',
+            n_eight: '2.0-0',
+            zero: '2.1-1', one: '2.2-2', two: '2.3-3', three: '3.0-0',
+            four: '3.1-1', five: '3.2-2', six: '3.3-3', seven: '4.0-0',
+            eight: '4.1-1', check: '333ms4.2-3,5.0-0'
+        })
 
-        n_zero: '0.0-0', n_one: '0.1-1', n_two: '0.2-2', n_three: '0.3-3', 
-        n_four: '1.0-0', n_five: '1.1-1', n_six: '1.2-2', n_seven: '1.3-3', 
-        n_eight: '2.0-0',
-        zero: '2.1-1', one: '2.2-2', two: '2.3-3', three: '4.0-0', 
-        four: '4.1-1', five: '4.2-2', six: '4.3-3', seven: '5.0-0', 
-        eight: '5.1-1', check: '333ms4.2-3,5.0-0'
-    })
+        let [x, y] = [i % 2, Math.floor(i / 2)]
 
-    xy_anim(rule0, rules_box[0], rules_box[1], false)
+        xy_anim(rule0, rules_box[0] + x * 40, rules_box[1] + y * 40, false)
 
-    rule_blocks.push({
-        anim: rule0,
-        t_reveal: 0
+        rule_blocks.push({
+            anim: rule0,
+            t_reveal: 0,
+            revealed: false,
+            is_completed: false
+        })
     })
 
 }
@@ -98,6 +105,8 @@ function grid_to_level(level: Grid) {
 type RuleBlock = {
     anim: Anim
     t_reveal: number
+    revealed: boolean
+    is_completed: boolean
 }
 
 let rule_blocks: RuleBlock[]
@@ -185,37 +194,38 @@ function push_block(i: number, j: number, w: number, h: number) {
     let gps = block_poss(i, j, [w, h])
 
     gps.forEach(_ => grid[grid_ij_key(_[0], _[1])] = block)
-
-    /*
-
-    grid[grid_ij_key(i, j)] = block
-    if (w === 2 && h === 1) {
-        grid[grid_ij_key(i + 1, j)] = block
-    }
-
-    if (w === 1 && h === 2) {
-        grid[grid_ij_key(i, j + 1)] = block
-    }
-
-    if (w === 2 && h === 2) {
-        grid[grid_ij_key(i + 1, j)] = block
-        grid[grid_ij_key(i, j + 1)] = block
-        grid[grid_ij_key(i + 1, j + 1)] = block
-    }
-        */
 }
 
+let world: XY
+let name: string
+
+let level = 0
+let level_completed: boolean
+
+function next_level() {
+
+    level_completed = false
+
+    drag_block = undefined
+
+
+    let l1 = levels[level++]()
+
+    grid_to_level(l1)
+
+    world = l1.world
+    name = l1.name
+}
 
 export function _init() {
     t = 0
     cursor = [0, 0]
     drag = DragHandler(g.canvas)
 
-    let l1 = init_level1()
-    l1 = init_demo_level()
-    //l1 = init_level2()
+    blocks = []
+    rule_blocks = []
 
-    grid_to_level(l1)
+    next_level()
 
     music_anim = add_anim(0, 112, 32, 32, { idle: '0.0-0', hover: '0.1-1', off: '0.2-2', off_hover: '0.3-3' })
     tag_anim(music_anim, 'idle')
@@ -351,6 +361,18 @@ export function _update(delta: number) {
 
     grid_to_tiles()
     rule_blocks.forEach((block, i) => update_rule_block(block, i, delta))
+
+
+    if (drag.is_up) {
+        if (!level_completed && rule_blocks.every(_ => _.is_completed)) {
+            level_completed = true
+        }
+    }
+
+    if (level_completed) {
+        next_level()
+    }
+
     blocks.forEach(update_block)
 
     update_animations(delta)
@@ -363,21 +385,29 @@ function update_rule_block(block: RuleBlock, i: number, delta: number) {
 
     let pt = rule.progress(tiles)!
     let n_tag = (pt < 0 || Object.is(pt, -0)) ? 'n_' : ''
-    let i_tag = Math.round(pt * 8)
+    let i_tag = Math.floor(pt * 8)
+
+    console.log(pt, i_tag)
+    let is_completed = (pt !== -1) && (i_tag === 8 || (Object.is(pt, -0)))
 
     const tags = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']
 
-    if (!Object.is(pt, -0) && pt < 8) {
+    block.is_completed = is_completed
+    if (!is_completed) {
         tag_anim(block.anim, n_tag + tags[Math.abs(i_tag)])
     }
 
-    if (block.t_reveal === 0 && (pt !== -1) && (i_tag === 8 || (Object.is(pt, -0)))) {
+    if (block.t_reveal === 0 && is_completed) {
         block.t_reveal = 1000
         tag_anim(block.anim, 'check')
     }
 
     if (block.t_reveal > 0) {
         block.t_reveal = appr(block.t_reveal, 0, delta)
+
+        if (block.t_reveal === 0) {
+            block.revealed = true
+        }
     }
 }
 
@@ -498,8 +528,10 @@ export function _render() {
 
     f.clear()
 
-    f.text('1-1.', _grid_bounds[0] * 4 + _grid_bounds[2] * 8 * 4, 32, 64, '#dff6f5', 'right')
-    f.text('Right', 10 + _grid_bounds[0] * 4 + _grid_bounds[2] * 8 * 4, 32, 64, '#f4b41b', 'left')
+    let white = '#dff6f5'
+    let yellow = '#f4b41b'
+    f.text(`${world[0]}-${world[1]}.`, _grid_bounds[0] * 4 + _grid_bounds[2] * 8 * 4, 32, 64, yellow, 'right')
+    f.text(name, 10 + _grid_bounds[0] * 4 + _grid_bounds[2] * 8 * 4, 32, 64, white, 'left')
 }
 
 function render_edges() {
