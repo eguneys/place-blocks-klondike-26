@@ -1,7 +1,7 @@
 import { g } from './webgl/gl_init'
 import { Loop } from './loop_input'
 import './style.css'
-import { _init, _render, _update } from './ur.ts'
+import { _init, _render, _update } from './ur2.ts'
 import Content from './content'
 import a from './audio'
 import { f } from './canvas.ts'
