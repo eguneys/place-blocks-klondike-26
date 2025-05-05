@@ -4,15 +4,15 @@ import { appr, box_intersect, XY, XYWH } from './util'
 import { g } from './webgl/gl_init'
 import a from './audio'
 import { f } from './canvas'
-import { Blue, Green, Grid, ij_to_key, init_level1, Red, Rules, Tile, Tiles, Yellow } from './grid'
+import { Blue, Green, Grid, ij_to_key, init_demo_level, init_level1, Red, Rules, Tile, Tiles, Yellow } from './grid'
 
 
 let tiles: Tiles
 
 function grid_to_tiles() {
     tiles = []
-    for (let i = 0; i < 11; i++) {
-        for (let j =0; j < 5; j++) {
+    for (let i = 0; i < 22; i++) {
+        for (let j =0; j < 14; j++) {
             let tile: Tile | undefined = undefined
 
             let block = grid[ij_to_key(i, j)]
@@ -49,8 +49,8 @@ function grid_to_level(level: Grid) {
 
 
 
-    for (let i = 0; i < 11; i++) {
-        for (let j = 0; j < 5; j++) {
+    for (let i = 0; i < 22; i++) {
+        for (let j = 0; j < 14; j++) {
             let tile = level.tiles[ij_to_key(i, j)]
             if (tile === Yellow) {
                 push_block(i, j, 1, 1)
@@ -129,7 +129,7 @@ let grid: (Block | undefined)[]
 
 let t: number
 
-let _grid_bounds: XYWH = [40, 32, 11, 7]
+let _grid_bounds: XYWH = [40, 32, 22, 14]
 
 function grid_ij_key(i: number, j: number) {
     return i + j * _grid_bounds[2]
@@ -140,11 +140,11 @@ function grid_key2ij(key: number): XY {
 
 
 function pos_to_ij(x: number, y: number, _w: number, _h: number): XY {
-    return [Math.floor((x - _grid_bounds[0]) / 32), Math.floor((y - _grid_bounds[1]) / 32)]
+    return [Math.floor((x - _grid_bounds[0]) / 16), Math.floor((y - _grid_bounds[1]) / 16)]
 }
 
 function ij_to_pos(i: number, j: number): XY {
-    return [_grid_bounds[0] + i * 32, _grid_bounds[1] + j * 32]
+    return [_grid_bounds[0] + i * 16, _grid_bounds[1] + j * 16]
 }
 
 function push_block(i: number, j: number, w: number, h: number) {
@@ -165,8 +165,7 @@ function push_block(i: number, j: number, w: number, h: number) {
 
     tag_anim(anim, 'idle')
 
-    let x = _grid_bounds[0] + i * 32
-    let y = _grid_bounds[1] + j * 32
+    let [x, y] = ij_to_pos(i, j)
 
     let block: Block = {
         anim,
@@ -177,6 +176,13 @@ function push_block(i: number, j: number, w: number, h: number) {
     }
 
     blocks.push(block)
+
+
+    let gps = block_poss(i, j, [w, h])
+
+    gps.forEach(_ => grid[grid_ij_key(_[0], _[1])] = block)
+
+    /*
 
     grid[grid_ij_key(i, j)] = block
     if (w === 2 && h === 1) {
@@ -192,6 +198,36 @@ function push_block(i: number, j: number, w: number, h: number) {
         grid[grid_ij_key(i, j + 1)] = block
         grid[grid_ij_key(i + 1, j + 1)] = block
     }
+        */
+}
+
+
+function block_poss(i: number, j: number, wh: XY) {
+
+    let res: XY[] = []
+    function push_tile(i: number, j: number) {
+        res.push([i, j])
+        res.push([i + 1, j + 1])
+        res.push([i + 1, j])
+        res.push([i, j + 1])
+    }
+
+
+    push_tile(i, j)
+
+    if (wh[0] === 2 && wh[1] === 1){
+        push_tile(i + 2, j)
+    }
+    if (wh[0] === 1 && wh[1] === 2) {
+        push_tile(i, j + 2)
+    }
+    if (wh[0] === 2 && wh[1] === 2) {
+        push_tile(i + 2, j + 2)
+        push_tile(i + 2, j)
+        push_tile(i, j + 2)
+    }
+
+    return res
 }
 
 export function _init() {
@@ -201,7 +237,8 @@ export function _init() {
 
     //init_demo_level()
 
-    let l1 = init_level1()
+    let l1 = init_demo_level()
+    //let l1 = init_level1()
 
     grid_to_level(l1)
 
@@ -213,6 +250,10 @@ let music_anim: Anim
 
 function block_drag_box(block: Block): XYWH {
     return [block.pos[0] + 1, block.pos[1] + 1, 30 * block.wh[0], 30 * block.wh[1]]
+}
+
+function block_collide_box(block: Block): XYWH {
+    return [block.pos[0] + 4, block.pos[1] + 4, block.wh[0] * 32 - 8, block.wh[1] * 32 - 8]
 }
 
 function block_box(block: Block): XYWH {
@@ -408,7 +449,7 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
     for (let i = 0; i < a; i+= Math.abs(step)) {
         block.pos[0] += step
 
-        let c = grid_collide(block_box(block))
+        let c = grid_collide(block_collide_box(block))
         if (c === 'edge' || !(c.length === 0 || (c.length === 1 && c[0] === block))) {
             block.pos[0] -= step
             break
@@ -428,7 +469,7 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
     for (let i = 0; i < a; i+= Math.abs(step)) {
         block.pos[1] += step
 
-        let c = grid_collide(block_box(block))
+        let c = grid_collide(block_collide_box(block))
         if (c === 'edge' || !(c.length === 0 || (c.length === 1 && c[0] === block))) {
             block.pos[1] -= step
             break
@@ -440,39 +481,13 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
 
     let new_key = grid_ij_key(new_i, new_j)
     if (key !== new_key) {
-        grid[key] = undefined
 
-        if (block.wh[0] === 2 && block.wh[1] === 1) {
-            grid[key + 1] = undefined
-        }
+        let old_poss = block_poss(...grid_key2ij(key), block.wh)
+        let new_poss = block_poss(new_i, new_j, block.wh)
 
 
-        if (block.wh[0] === 1 && block.wh[1] === 2) {
-            grid[key + _grid_bounds[2]] = undefined
-        }
-        if (block.wh[0] === 2 && block.wh[1] === 2) {
-            grid[key + _grid_bounds[2]] = undefined
-            grid[key + 1] = undefined
-            grid[key + _grid_bounds[2] + 1] = undefined
-        }
-
-
-
-        grid[new_key] = block
-
-        if (block.wh[0] === 2 && block.wh[1] === 1) {
-            grid[new_key + 1] = block
-        }
-
-        if (block.wh[0] === 1 && block.wh[1] === 2) {
-            grid[new_key + _grid_bounds[2]] = block
-        }
-
-        if (block.wh[0] === 2 && block.wh[1] === 2) {
-            grid[new_key + _grid_bounds[2]] = block
-            grid[new_key + 1] = block
-            grid[new_key + _grid_bounds[2] + 1] = block
-        }
+        old_poss.forEach(_ => grid[grid_ij_key(..._)] = undefined)
+        new_poss.forEach(_ => grid[grid_ij_key(..._)] = block)
     }
 }
 
@@ -507,31 +522,31 @@ export function _render() {
 
     f.clear()
 
-    f.text('1-1.', _grid_bounds[0] * 4 + _grid_bounds[2] * 16 * 4, 32, 64, '#dff6f5', 'right')
-    f.text('Right', 10 + _grid_bounds[0] * 4 + _grid_bounds[2] * 16 * 4, 32, 64, '#f4b41b', 'left')
+    f.text('1-1.', _grid_bounds[0] * 4 + _grid_bounds[2] * 8 * 4, 32, 64, '#dff6f5', 'right')
+    f.text('Right', 10 + _grid_bounds[0] * 4 + _grid_bounds[2] * 8 * 4, 32, 64, '#f4b41b', 'left')
 }
 
 function render_edges() {
 
     g.draw(_grid_bounds[0] - 8, _grid_bounds[1] - 8, 11, 11, 272, 64, false)
-    for (let i = 0; i < _grid_bounds[2] * 32 / 11; i++) {
+    for (let i = 0; i < _grid_bounds[2] * 16 / 11; i++) {
         g.draw(_grid_bounds[0] + i * 11, _grid_bounds[1] - 8, 11, 11, 272 + 11, 64, false)
     }
 
-    g.draw(_grid_bounds[0] + _grid_bounds[2] * 32, _grid_bounds[1]- 8, 11, 11, 272 + 11 + 11, 64, false)
-    for (let i = 0; i < _grid_bounds[3] * 32 / 11; i++) {
+    g.draw(_grid_bounds[0] + _grid_bounds[2] * 16, _grid_bounds[1]- 8, 11, 11, 272 + 11 + 11, 64, false)
+    for (let i = 0; i < _grid_bounds[3] * 16 / 11; i++) {
         g.draw(_grid_bounds[0] - 8 , _grid_bounds[1] + i * 11, 11, 11, 272, 64 + 11, false)
     }
-    for (let i = 0; i < _grid_bounds[3] * 32 / 11; i++) {
-        g.draw(_grid_bounds[0] + _grid_bounds[2] * 32, _grid_bounds[1] + i * 11, 11, 11, 272 + 11 + 11, 64 + 11, false)
+    for (let i = 0; i < _grid_bounds[3] * 16 / 11; i++) {
+        g.draw(_grid_bounds[0] + _grid_bounds[2] * 16, _grid_bounds[1] + i * 11, 11, 11, 272 + 11 + 11, 64 + 11, false)
     }
-    for (let i = 0; i < _grid_bounds[2] * 32 / 11; i++) {
-        g.draw(_grid_bounds[0] + i * 11, _grid_bounds[1] + _grid_bounds[3] * 32, 11, 11, 272 + 11, 64 + 11 + 11, false)
+    for (let i = 0; i < _grid_bounds[2] * 16 / 11; i++) {
+        g.draw(_grid_bounds[0] + i * 11, _grid_bounds[1] + _grid_bounds[3] * 16, 11, 11, 272 + 11, 64 + 11 + 11, false)
     }
 
     //bottom left
-    g.draw(_grid_bounds[0] + _grid_bounds[2] * 32, _grid_bounds[1] + _grid_bounds[3] * 32, 11, 11, 272 + 11 + 11, 64 + 11 + 11, false)
-    g.draw(_grid_bounds[0] - 8, _grid_bounds[1] + _grid_bounds[3] * 32, 11, 11, 272, 64 + 11 + 11, false)
+    g.draw(_grid_bounds[0] + _grid_bounds[2] * 16, _grid_bounds[1] + _grid_bounds[3] * 16, 11, 11, 272 + 11 + 11, 64 + 11 + 11, false)
+    g.draw(_grid_bounds[0] - 8, _grid_bounds[1] + _grid_bounds[3] * 16, 11, 11, 272, 64 + 11 + 11, false)
 
 
 
@@ -595,7 +610,7 @@ function render_cursor() {
 
     blocks.forEach(block => {
         if (block.is_hovering) {
-            //g.draw(...block_drag_box(block), 296, 0, false)
+            //g.draw(...block_collide_box(block), 296, 0, false)
         }
     })
 

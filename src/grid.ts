@@ -16,8 +16,8 @@ export type Grid = {
     tiles: Tiles
     rules: Rules
 }
-export const width = 11
-export const height = 7
+export const width = 22
+export const height = 14
 
 export const Yellow = 1
 export const Blue = 2
@@ -37,20 +37,21 @@ export function init_demo_level(): Grid {
 
     let tiles: Tiles = []
 
-    for (let k = 0; k < 10; k++) {
+    for (let k = 0; k < 20; k+=2) {
         tiles[ij_to_key(k, 0)] = Yellow
     }
-    for (let j = 0; j < 9; j += 2) {
-        tiles[ij_to_key(j, 1)] = Blue
+    for (let j = 0; j < 18; j += 4) {
+        tiles[ij_to_key(j, 2)] = Blue
     }
-    for (let j = 0; j < 9; j += 2) {
-        tiles[ij_to_key(j, 2)] = Green
+    for (let j = 0; j < 18; j += 4) {
+        tiles[ij_to_key(j, 4)] = Green
     }
-    for (let j = 0; j < 9; j += 2) {
-        tiles[ij_to_key(j, 4)] = Red
+    for (let j = 0; j < 18; j += 4) {
+        tiles[ij_to_key(j, 8)] = Red
     }
 
     let rules: Rules = []
+    rules.push(rule1)
 
     return {
         tiles,
@@ -62,7 +63,11 @@ export function init_level1(): Grid {
 
     let tiles: Tiles = []
 
-    tiles[ij_to_key(5, 3)] = Yellow
+
+    tiles[ij_to_key(0, 0)] = Red
+    tiles[ij_to_key(2, 4)] = Yellow
+    tiles[ij_to_key(5, 3)] = Blue
+    tiles[ij_to_key(9, 3)] = Green
 
     let rules: Rules = []
 
@@ -80,11 +85,11 @@ const rule1: Rule = {
     icon: '',
     color: 'yellow',
     progress(tiles: Tiles) {
-        for (let i = 10; i >= 0; i--) {
-            for (let j = 0; j < 5; j++) {
+        for (let i = width - 1; i >= 0; i--) {
+            for (let j = 0; j < height; j++) {
                 let key = ij_to_key(i, j)
                 if (tiles[key] === Yellow) {
-                    return i / 10
+                    return i / (width - 1)
                 }
             }
         }
