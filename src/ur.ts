@@ -552,7 +552,7 @@ function render_rule_block(block: RuleBlock) {
         for (let i = 0; i < 5; i++) {
                 let o_sx = 4
                 let o_sy = 4
-                g.draw(x + i * 5 + 4, j * 5 + y + 30, 4, 4, 328 + o_sx, 64 + o_sy, false)
+                g.draw(x + i * 3 + 4, j * 5 + y + 30, 2, 2, 328 + o_sx, 64 + o_sy, false)
             }
         }
     }else if (block.i_progress < 0) {
@@ -560,7 +560,7 @@ function render_rule_block(block: RuleBlock) {
         for (let i = 0; i < 5; i++) {
                 let o_sx = (i + j * 5) < -block.i_progress * 16 ? 4: 0
                 let o_sy = (i + j * 5) < -block.i_progress * 16 ? 0: 4
-                g.draw(x + i * 5 + 4, j * 5 + y + 30, 4, 4, 328 + o_sx, 64 + o_sy, false)
+                g.draw(x + i * 4 + 7, j * 4 + y + 30, 3, 3, 328 + o_sx, 64 + o_sy, false)
             }
         }
     } else {
@@ -568,13 +568,13 @@ function render_rule_block(block: RuleBlock) {
         for (let i = 0; i < 5; i++) {
                 let o_sx = (i + j * 5) < block.i_progress * 16 ? 4: 0
                 let o_sy = (i + j * 5) < block.i_progress * 16 ? 4: 0
-                g.draw(x + i * 5 + 4, j * 5 + y + 30, 4, 4, 328 + o_sx, 64 + o_sy, false)
+                g.draw(x + i * 4 + 7, j * 4 + y + 30, 3, 3, 328 + o_sx, 64 + o_sy, false)
             }
         }
     }
 
     if (Object.is(block.i_progress, -0) || block.i_progress === 1) {
-        g.draw(x + 4, y + 30 - 1, 24, 18, 416, 239,  false)
+        g.draw(x + 4, y + 28, 24, 18, 416, 239,  false)
     }
 }
 
