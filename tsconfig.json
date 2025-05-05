@@ -24,5 +24,6 @@
       "vite-plugin-glsl/ext"
     ]
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/_old"]
 }
