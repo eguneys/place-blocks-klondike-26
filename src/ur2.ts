@@ -14,6 +14,7 @@ function init_level(l: Level) {
     blocks = []
     grid = []
 
+    is_update_progress = true
 
 
     for (let block of level.ground.blocks) {
@@ -45,7 +46,8 @@ function init_level(l: Level) {
             zero: '0.0-0',
             right: '0.1-1',  corners: '0.2-2',  no_top: '0.3-3',  no_center: '1.0-0',  
             on_the_floor: '1.1-1',  '4x4': '1.2-2',  
-            one_group: '1.3-3'
+            one_group: '1.3-3',
+            no_group: '1.4-4'
         })
 
 
@@ -161,6 +163,8 @@ let name: string
 
 let i_level: number
 let level_completed: boolean
+
+let is_update_progress: boolean
 
 function next_level() {
 
@@ -319,6 +323,7 @@ export function _update(delta: number) {
 
     rule_blocks.forEach((block, i) => update_rule_block(block, i, delta))
 
+    is_update_progress = false
 
     if (drag.is_up) {
         if (!level_completed && rule_blocks.every(_ => _.i_progress === 1 || Object.is(-0, _.i_progress))) {
@@ -337,10 +342,13 @@ export function _update(delta: number) {
     drag.update(delta)
 }
 
+
 function update_rule_block(block: RuleBlock, i: number, delta: number) {
     let rule = level.rules[i]
 
-    block.i_progress = rule.progress(level.ground)
+    if (is_update_progress) {
+        block.i_progress = rule.progress(level.ground)
+    }
 
     if (block.t_reveal === 0 && !block.revealed) {
 
@@ -454,6 +462,7 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
 
 
         level.ground.key_new_key(key, new_key)
+        is_update_progress = true
     }
 }
 

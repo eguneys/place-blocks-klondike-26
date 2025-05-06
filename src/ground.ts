@@ -54,6 +54,85 @@ export function red_block(x: number, y: number): Block {
     }
 }
 
+export function neighbor_tiles(x: number, y: number, wh: XY): XY[] {
+    let res: XY[] = []
+    function push_xy(x: number, y: number) {
+        res.push([x, y])
+    }
+    /*
+     o
+    o.
+    */
+    push_xy(x - 1, y)
+    push_xy(x, y - 1)
+    push_xy(x - 1, y - 1)
+    push_xy(x + 1, y - 1)
+
+    if (wh[0] === 1 &&  wh[1] === 1) {
+        /*
+        x
+       x.o
+        o
+        */
+        push_xy(x + 2, y)
+        push_xy(x + 2, y + 1)
+        push_xy(x, y + 2)
+        push_xy(x + 1, y + 2)
+    }
+
+    if (wh[0] === 2 && wh[1] === 1) {
+        /*
+        xo
+       x..o
+        oo
+
+       */
+        push_xy(x, y + 2)
+        push_xy(x + 1, y + 2)
+        push_xy(x + 4, y)
+        push_xy(x + 4, y + 1)
+        push_xy(x + 2, y - 1)
+        push_xy(x + 3, y - 1)
+        push_xy(x + 2, y + 2)
+        push_xy(x + 3, y + 2)
+    }
+    if (wh[0] === 1 && wh[1] === 2) {
+        /*
+        x
+       x.o
+       o.o
+        o
+        */
+        push_xy(x + 2, y)
+        push_xy(x + 2, y + 1)
+        push_xy(x + 2, y + 2)
+        push_xy(x + 2, y + 3)
+        push_xy(x - 1, y + 2)
+        push_xy(x - 1, y + 3)
+        push_xy(x, y + 4)
+        push_xy(x + 1, y + 4)
+    }
+    if (wh[0] === 2 && wh[1] === 2) {
+        /*
+         xo
+        x..o
+        o..o
+         oo
+        */
+        push_xy(x + 4, y)
+        push_xy(x + 4, y + 1)
+        push_xy(x + 4, y + 2)
+        push_xy(x + 4, y + 3)
+        push_xy(x + 2, y + 4)
+        push_xy(x + 3, y + 4)
+        push_xy(x, y + 4)
+        push_xy(x + 1, y + 4)
+        push_xy(x - 1, y + 2)
+        push_xy(x - 1, y + 3)
+    }
+    return res
+}
+
 export function block_tiles(x: number, y: number, wh: XY): XY[] {
     let res: XY[] = []
     function push_xy(x: number, y: number) {
@@ -140,19 +219,56 @@ export type Level = {
 
 
 export let levels: (() => Level)[] = [
-    init_level7,
+    init_level_c1,
     init_level1,
     init_level2,
     init_level3,
     init_level4,
     init_level5,
     init_level6,
+    init_level7,
+
+    init_level_b1,
+    init_level_b2,
 ]
 
 
-levels = [
-    init_level_b1
-]
+export function init_level_c1(): Level {
+
+
+    let ground = new Ground()
+
+    ground.add_block(Red, 0, 0)
+    ground.add_block(Red, 9, 0)
+    ground.add_block(Red, 16, 0)
+
+    ground.add_block(Blue, 0, 12)
+    ground.add_block(Blue, 9, 12)
+    ground.add_block(Blue, 16,12)
+
+
+
+    let rules: Rule[] = [{
+        icon: 'one_group',
+        color: Red,
+        progress: RULE_one_group(Red)
+    }]
+
+
+    rules.push({
+        icon: 'no_group',
+        color: Blue,
+        progress: RULE_no_group(Blue)
+    })
+
+    return {
+        name: 'Group 1 0',
+        world: [2, 1],
+        ground,
+        rules
+    }
+}
+
 
 
 export function init_level_b1(): Level {
@@ -182,6 +298,47 @@ export function init_level_b1(): Level {
         rules
     }
 }
+
+export function init_level_b2(): Level {
+
+
+    let ground = new Ground()
+
+    ground.add_block(Blue, 2, 2)
+    ground.add_block(Blue, 7, 2)
+    ground.add_block(Blue, 4, 4)
+
+    ground.add_block(Blue, 12, 9)
+    ground.add_block(Blue, 16, 9)
+    ground.add_block(Blue, 14, 11)
+
+    ground.add_block(Blue, 2, 9)
+    ground.add_block(Blue, 7, 9)
+    ground.add_block(Blue, 4, 11)
+
+    ground.add_block(Blue, 12, 2)
+    ground.add_block(Blue, 16, 2)
+    ground.add_block(Blue, 14, 4)
+
+
+
+
+    let rules: Rule[] = [{
+        icon: 'no_group',
+        color: Blue,
+        progress: RULE_no_group(Blue)
+    }]
+
+
+
+    return {
+        name: 'No Group',
+        world: [2, 2],
+        ground,
+        rules
+    }
+}
+
 
 
 
@@ -370,8 +527,6 @@ export function init_level7(): Level {
 
 
 
-
-
 const RULE_right = (tile: Tile) => (ground: Ground) => {
     for (let i = Width - 1; i >= 0; i--) {
         for (let j = 0; j < Height; j++) {
@@ -482,25 +637,70 @@ const RULE_one_group = (tile?: Tile) => (ground: Ground) => {
 
     let greens = tile ? ground.blocks.filter(_ => _?.tile === tile) : ground.blocks
 
+    let tiles = greens.map(_ => block_tiles(..._.xy, _.wh))
 
-    let centers = greens.map(_ => [
-        ...block_tiles(_.xy[0], _.xy[1], [2, 2]),
-        ...block_tiles(_.xy[0] + 4, _.xy[1], [2, 2]),
-        ...block_tiles(_.xy[0], _.xy[1] + 4, [2, 2]),
-        ...block_tiles(_.xy[0] + 4, _.xy[1] + 4, [2, 2]),
-    ])
+    function gather_neighbor_blocks(block: Block, acc: Block[]) {
+        let ns = neighbor_tiles(...block.xy, block.wh)
 
-    let tt = centers.map(center => {
+        for (let i = 0; i < tiles.length; i++) {
+            if (tiles[i].some(_ => ns.find(n => n[0] === _[0] && n[1] === _[1]))) {
+                if (!acc.includes(greens[i])) {
+                    acc.push(greens[i])
+                    gather_neighbor_blocks(greens[i], acc)
+                }
+            }
+        }
+    }
 
-        let mm = greens.flatMap(_ => {
-            let tiles = block_tiles(..._.xy, _.wh)
-            return tiles.filter(_ => center.find(c => c[0] === _[0] && c[1] === _[1]))
-        })
+    let res: Block[][] = []
+    for (let i = 0; i < greens.length; i++) {
+        let block = greens[i]
+
+        if (res.some(_ => _.includes(block))) {
+            continue
+        }
+        let acc: Block[] = [block]
+        res.push(acc)
+
+        gather_neighbor_blocks(block, acc)
+    }
+
+    return 1 - (res.length - 1) / greens.length
+}
 
 
-        return mm.length / center.length
-    })
+const RULE_no_group = (tile?: Tile) => (ground: Ground) => {
 
-    return Math.max(...tt)
+    let greens = tile ? ground.blocks.filter(_ => _?.tile === tile) : ground.blocks
+
+    let tiles = greens.map(_ => block_tiles(..._.xy, _.wh))
+
+    function gather_neighbor_blocks(block: Block, acc: Block[]) {
+        let ns = neighbor_tiles(...block.xy, block.wh)
+
+        for (let i = 0; i < tiles.length; i++) {
+            if (tiles[i].some(_ => ns.find(n => n[0] === _[0] && n[1] === _[1]))) {
+                if (!acc.includes(greens[i])) {
+                    acc.push(greens[i])
+                    gather_neighbor_blocks(greens[i], acc)
+                }
+            }
+        }
+    }
+
+    let res: Block[][] = []
+    for (let i = 0; i < greens.length; i++) {
+        let block = greens[i]
+
+        if (res.some(_ => _.includes(block))) {
+            continue
+        }
+        let acc: Block[] = [block]
+        res.push(acc)
+
+        gather_neighbor_blocks(block, acc)
+    }
+
+    return res.length / greens.length
 }
 
