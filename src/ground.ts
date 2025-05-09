@@ -65,7 +65,7 @@ export function neighbor_tiles(x: number, y: number, wh: XY): XY[] {
     */
     push_xy(x - 1, y)
     push_xy(x, y - 1)
-    push_xy(x - 1, y - 1)
+    push_xy(x - 1, y + 1)
     push_xy(x + 1, y - 1)
 
     if (wh[0] === 1 &&  wh[1] === 1) {
@@ -219,7 +219,9 @@ export type Level = {
 
 
 export let levels: (() => Level)[] = [
-    init_level_c1,
+    init_level_d2,
+    init_level_d1,
+
     init_level1,
     init_level2,
     init_level3,
@@ -227,13 +229,201 @@ export let levels: (() => Level)[] = [
     init_level5,
     init_level6,
     init_level7,
-
     init_level_b1,
     init_level_b2,
+
+    init_level_c1,
+    init_level_c2,
+    init_level_c3,
+
+
+
 ]
 
 
-export function init_level_c1(): Level {
+export function init_level_d2(): Level {
+
+    let ground = new Ground()
+
+    ground.add_block(Red, 0, 8)
+    ground.add_block(Red, 9, 8)
+    ground.add_block(Red, 16, 8)
+    ground.add_block(Red, 6, 2)
+    ground.add_block(Red, 10, 2)
+
+    ground.add_block(Yellow, 0, 0)
+    ground.add_block(Yellow, 2, 0)
+    ground.add_block(Yellow, 4, 0)
+    ground.add_block(Yellow, 6, 0)
+
+    ground.add_block(Green, 0, 2)
+    ground.add_block(Green, 2, 2)
+    ground.add_block(Green, 4, 2)
+
+    ground.add_block(Green, 4, 8)
+    ground.add_block(Green, 6, 8)
+    ground.add_block(Green, 8, 8)
+
+    ground.add_block(Blue, 14, 2)
+    ground.add_block(Blue, 14, 4)
+
+
+    ground.add_block(Blue, 18, 2)
+    ground.add_block(Blue, 18, 4)
+
+    ground.add_block(Blue, 0, 12)
+    ground.add_block(Blue, 18, 12)
+    ground.add_block(Blue, 18, 0)
+
+
+
+    let rules: Rule[] = [{
+        icon: 'corners',
+        color: Yellow,
+        progress: RULE_corners4(Yellow)
+    }]
+
+    rules.push({
+        icon: 'one_group',
+        color: Red,
+        progress: RULE_one_group(Red)
+    })
+
+    rules.push({
+        icon: 'one_group',
+        color: Blue,
+        progress: RULE_one_group(Blue)
+    })
+
+    rules.push({
+        icon: 'one_group',
+        color: Green,
+        progress: RULE_one_group(Green)
+    })
+
+
+
+
+
+
+
+
+    return {
+        name: 'Yellow and Groups',
+        world: [4, 2],
+        ground,
+        rules
+    }
+}
+
+
+
+export function init_level_d1(): Level {
+
+    let ground = new Ground()
+
+    ground.add_block(Red, 0, 8)
+    ground.add_block(Red, 9, 8)
+    ground.add_block(Red, 16, 8)
+    ground.add_block(Red, 6, 2)
+    ground.add_block(Red, 10, 2)
+
+    ground.add_block(Yellow, 0, 0)
+    ground.add_block(Yellow, 2, 0)
+    ground.add_block(Yellow, 4, 0)
+    ground.add_block(Yellow, 6, 0)
+
+    ground.add_block(Green, 0, 2)
+    ground.add_block(Green, 2, 2)
+    ground.add_block(Green, 4, 2)
+
+    ground.add_block(Green, 4, 8)
+    ground.add_block(Green, 6, 8)
+    ground.add_block(Green, 8, 8)
+
+    ground.add_block(Blue, 14, 2)
+    ground.add_block(Blue, 14, 4)
+
+
+    ground.add_block(Blue, 18, 2)
+    ground.add_block(Blue, 18, 4)
+
+    ground.add_block(Blue, 0, 12)
+    ground.add_block(Blue, 18, 12)
+    ground.add_block(Blue, 18, 0)
+
+
+
+    let rules: Rule[] = [{
+        icon: 'corners',
+        color: Yellow,
+        progress: RULE_corners4(Yellow)
+    }]
+
+    return {
+        name: 'Yellow',
+        world: [4, 1],
+        ground,
+        rules
+    }
+}
+
+export function init_level_c3(): Level {
+
+
+    let ground = new Ground()
+
+    ground.add_block(Red, 0, 8)
+    ground.add_block(Red, 9, 8)
+    ground.add_block(Red, 16, 8)
+    ground.add_block(Red, 5, 2)
+
+    ground.add_block(Yellow, 0, 0)
+    ground.add_block(Yellow, 2, 0)
+    ground.add_block(Yellow, 4, 0)
+    ground.add_block(Yellow, 6, 0)
+    ground.add_block(Yellow, 8, 0)
+    ground.add_block(Yellow, 10, 0)
+    ground.add_block(Yellow, 12, 0)
+    ground.add_block(Yellow, 14, 0)
+    ground.add_block(Yellow, 16,0)
+    ground.add_block(Yellow, 18,0)
+    ground.add_block(Yellow, 20,0)
+
+
+
+    let rules: Rule[] = [{
+        icon: 'on_the_floor',
+        progress: RULE_on_floor(undefined)
+    }]
+
+
+    rules.push({
+        icon: 'no_group',
+        color: Yellow,
+        progress: RULE_no_group(Yellow)
+    })
+
+    rules.push({
+        icon: 'no_group',
+        color: Red,
+        progress: RULE_no_group(Red)
+    })
+
+
+
+    return {
+        name: 'Group 1 0',
+        world: [2, 1],
+        ground,
+        rules
+    }
+}
+
+
+
+
+export function init_level_c2(): Level {
 
 
     let ground = new Ground()
@@ -243,7 +433,9 @@ export function init_level_c1(): Level {
     ground.add_block(Red, 16, 0)
 
     ground.add_block(Blue, 0, 12)
-    ground.add_block(Blue, 9, 12)
+    ground.add_block(Blue, 4, 12)
+    ground.add_block(Blue, 8, 12)
+    ground.add_block(Blue, 12, 12)
     ground.add_block(Blue, 16,12)
 
 
@@ -264,6 +456,47 @@ export function init_level_c1(): Level {
     return {
         name: 'Group 1 0',
         world: [2, 1],
+        ground,
+        rules
+    }
+}
+
+
+
+export function init_level_c1(): Level {
+
+
+    let ground = new Ground()
+
+    ground.add_block(Red, 7, 2)
+    ground.add_block(Red, 7, 6)
+    ground.add_block(Red, 11, 4)
+
+    ground.add_block(Yellow, 0, 0)
+    ground.add_block(Yellow, 4, 0)
+    ground.add_block(Yellow, 8, 0)
+    ground.add_block(Yellow, 12, 0)
+    ground.add_block(Yellow, 16,0)
+
+
+
+    let rules: Rule[] = [{
+        icon: 'no_center',
+        color: Red,
+        progress: RULE_not_center(Red)
+    }]
+
+    rules.push({
+        icon: 'no_top',
+        color: Yellow,
+        progress: RULE_n_top(Yellow)
+    })
+
+
+
+    return {
+        name: 'Top Center',
+        world: [3, 1],
         ground,
         rules
     }
