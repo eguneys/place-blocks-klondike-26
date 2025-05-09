@@ -15,6 +15,7 @@ function app(el: HTMLElement) {
     Content.load()
   ]).then(() => {
     g.load_sheet(Content.spritesheet)
+    g.load_bg(Content.bg)
     _init()
 
     Loop(_update, _render)

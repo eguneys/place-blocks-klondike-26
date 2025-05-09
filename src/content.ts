@@ -18,10 +18,12 @@ function load_image(image: HTMLImageElement, src: string) {
 function Content() {
 
 
+    let bg = new Image()
     let spritesheet = new Image()
 
     async function load() {
         await Promise.all([
+            load_image(bg, './map.png'),
             load_image(spritesheet, './sprite.png'),
         ])
 
@@ -31,6 +33,7 @@ function Content() {
     return {
         load,
         spritesheet,
+        bg
     }
 }
 

@@ -101,8 +101,8 @@ export function GL(width: number, height: number): GL {
             gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP)
         },
         begin_render_bg() {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, batch_render_target.framebuffer)
-            gl.viewport(0, 0, batch_render_target.width, batch_render_target.height)
+            //gl.bindFramebuffer(gl.FRAMEBUFFER, batch_render_target.framebuffer)
+            //gl.viewport(0, 0, batch_render_target.width, batch_render_target.height)
 
             t_width = bg_t_width
             t_height = bg_t_height

@@ -1,15 +1,18 @@
-import { add_anim, Anim, remove_anim, render_animations, tag_anim, update_animations, xy_anim } from './anim'
 import { DragHandler } from './drag'
 import { appr, box_intersect, XY, XYWH } from './util'
 import { g } from './webgl/gl_init'
 import a from './audio'
 import { f } from './canvas'
 import { block_tiles, Blue, Green, ij2key, key2ij, Level, levels, Red, Yellow } from './ground'
+import { Anim, anim_manager, AnimManager } from './anim'
+
+let l_anim: AnimManager
+let m_anim: AnimManager
 
 function init_level(l: Level) {
     level = l
 
-    blocks.forEach(_ => remove_anim(_.anim))
+    blocks.forEach(_ => l_anim.remove_anim(_.anim))
 
     blocks = []
     grid = []
@@ -35,14 +38,14 @@ function init_level(l: Level) {
     }
 
     rule_blocks.forEach(_ => {
-        remove_anim(_.icon)
+        l_anim.remove_anim(_.icon)
     })
     rule_blocks = []
 
 
     level.rules.forEach((rule, i) => {
 
-        let icon0 = add_anim(0, 232, 32, 32, { 
+        let icon0 = l_anim.add_anim(0, 232, 32, 32, { 
             zero: '0.0-0',
             right: '0.1-1',  corners: '0.2-2',  no_top: '0.3-3',  no_center: '1.0-0',  
             on_the_floor: '1.1-1',  '4x4': '1.2-2',  
@@ -54,9 +57,9 @@ function init_level(l: Level) {
         let [x, y] = [i % 2, Math.floor(i / 2)]
         x = rules_box[0] + x * 40 - 2
         y = rules_box[1] + y * 40 - 2
-        xy_anim(icon0, x, y, false)
+        l_anim.xy_anim(icon0, x, y, false)
 
-        tag_anim(icon0, rule.icon)
+        l_anim.tag_anim(icon0, rule.icon)
 
         rule_blocks.push({
             xy: [x, y],
@@ -127,18 +130,18 @@ function push_block(i: number, j: number, w: number, h: number) {
     let anim: Anim
     
     if (w === 1 && h === 1) {
-        anim = add_anim(88, 0, 32, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+        anim = l_anim.add_anim(88, 0, 32, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
     } else if (w === 1 && h === 2) {
-        anim = add_anim(144, 104, 32, 64, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+        anim = l_anim.add_anim(144, 104, 32, 64, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
     } else if (w === 2 && h === 1) {
-        anim = add_anim(0, 64, 64, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+        anim = l_anim.add_anim(0, 64, 64, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
     } else if (w === 2 && h === 2) {
-        anim = add_anim(0, 168, 64, 64, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+        anim = l_anim.add_anim(0, 168, 64, 64, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
     } else {
-        anim = add_anim(0, 64, 64, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
+        anim = l_anim.add_anim(0, 64, 64, 32, { idle: '0.0-0', hover: '500ms0.1-1,200ms0.0-0', drag: '200ms0.0-0,300ms0.2-3' })
     }
 
-    tag_anim(anim, 'idle')
+    l_anim.tag_anim(anim, 'idle')
 
     let [x, y] = ij_to_pos(i, j)
 
@@ -181,17 +184,23 @@ function next_level() {
 export function _init() {
     i_level = 0
     t = 0
+
     cursor = [0, 0]
     drag = DragHandler(g.canvas)
+
+
+    l_anim = anim_manager()
+    m_anim = anim_manager()
 
     blocks = []
     rule_blocks = []
 
     next_level()
 
-    music_anim = add_anim(0, 112, 32, 32, { idle: '0.0-0', hover: '0.1-1', off: '0.2-2', off_hover: '0.3-3' })
-    tag_anim(music_anim, 'idle')
-    xy_anim(music_anim, _music_box[0], _music_box[1], false)
+
+    music_anim = l_anim.add_anim(0, 112, 32, 32, { idle: '0.0-0', hover: '0.1-1', off: '0.2-2', off_hover: '0.3-3' })
+    l_anim.tag_anim(music_anim, 'idle')
+    l_anim.xy_anim(music_anim, _music_box[0], _music_box[1], false)
 }
 let music_anim: Anim
 
@@ -237,13 +246,13 @@ function update_block(block: Block, _delta: number) {
         updateSpring(block.pos, block_target_pos)
     }
 
-    xy_anim(block.anim, block.pos[0], block.pos[1], false)
+    l_anim.xy_anim(block.anim, block.pos[0], block.pos[1], false)
     if (drag_block?.[0] === block) {
-        tag_anim(block.anim, 'drag')
+        l_anim.tag_anim(block.anim, 'drag')
     } else if (block.is_hovering) {
-        tag_anim(block.anim, 'hover')
+        l_anim.tag_anim(block.anim, 'hover')
     } else {
-        tag_anim(block.anim, 'idle')
+        l_anim.tag_anim(block.anim, 'idle')
     }
 }
 
@@ -295,9 +304,9 @@ export function _update(delta: number) {
         }
 
         if (box_intersect(cursor_box(drag.is_hovering), _music_box)) {
-            tag_anim(music_anim, playing_music === undefined ? 'off_hover' :'hover')
+            l_anim.tag_anim(music_anim, playing_music === undefined ? 'off_hover' :'hover')
         } else {
-            tag_anim(music_anim, playing_music === undefined ? 'off': 'idle')
+            l_anim.tag_anim(music_anim, playing_music === undefined ? 'off': 'idle')
         }
     }
 
@@ -337,7 +346,7 @@ export function _update(delta: number) {
 
     blocks.forEach(update_block)
 
-    update_animations(delta)
+    l_anim.update_animations(delta)
 
     drag.update(delta)
 }
@@ -370,9 +379,9 @@ function update_rule_block(block: RuleBlock, i: number, delta: number) {
 
 
     if (block.revealed) {
-        tag_anim(block.icon, rule.icon)
+        l_anim.tag_anim(block.icon, rule.icon)
     } else {
-        tag_anim(block.icon, 'zero')
+        l_anim.tag_anim(block.icon, 'zero')
     }
 }
 
@@ -466,8 +475,31 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
     }
 }
 
-
 export function _render() {
+    if (false) {
+        render_level()
+    } else {
+        render_map()
+    }
+}
+
+function render_map() {
+
+    g.clear()
+
+    g.begin_render_bg()
+
+    g.draw(0, 0, 480, 270, 0, 0, false)
+
+    g.end_render()
+
+    g.begin_render()
+    m_anim.render_animations(g)
+    render_cursor()
+    g.end_render()
+}
+
+function render_level() {
 
     g.clear()
 
@@ -489,7 +521,7 @@ export function _render() {
     //render_background_in_stencil()
     render_edges()
 
-    render_animations(g)
+    l_anim.render_animations(g)
 
     rule_blocks.forEach(block => render_rule_block(block))
 
