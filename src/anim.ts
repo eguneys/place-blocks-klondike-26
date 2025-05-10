@@ -9,6 +9,7 @@ type RawAnimDefinition = `${number}.${number}-${number}` | `${number}ms${number}
 type AnimDefinition = RawAnimDefinition
     | `${RawAnimDefinition},${RawAnimDefinition}`
     | `${RawAnimDefinition},${RawAnimDefinition},${RawAnimDefinition}`
+    | `${RawAnimDefinition},${RawAnimDefinition},${RawAnimDefinition},${RawAnimDefinition}`
 
 type AnimLoopDefinition = AnimDefinition | `${AnimDefinition}_${number}`
 
@@ -24,6 +25,7 @@ export type Anim = {
     t: number
     i_frame: number
     flip_x: boolean
+    theta: number
     options: AnimOptions
 }
 
@@ -92,6 +94,7 @@ export function make_anim(sx: number, sy: number, w: number, h: number, y_frame_
         t: 0,
         i_frame: 0,
         flip_x: false,
+        theta: 0,
         options
     }
     return res
@@ -172,7 +175,7 @@ export function anim_manager(): AnimManager {
         let sx = anim.sx + frame[0] * anim.w
         let sy = anim.sy + frame[1] * anim.h
 
-        gl.draw(anim.x, anim.y, anim.w, anim.h, sx, sy, anim.flip_x)
+        gl.draw(anim.x, anim.y, anim.w, anim.h, sx, sy, anim.flip_x, anim.theta)
     }
 
     function update_animations(delta: number) {

@@ -16,7 +16,7 @@ export type GL = {
     begin_render(): void
     begin_render_bg(): void
     begin_render_tiles(): void
-    draw(x: number, y: number, w: number, h: number, sx: number, sy: number, flip_x: boolean): void
+    draw(x: number, y: number, w: number, h: number, sx: number, sy: number, flip_x: boolean, theta?: number): void
     end_render(): void
     flush_to_screen(): void
     clear(): void
@@ -137,7 +137,7 @@ export function GL(width: number, height: number): GL {
                 [u, u2] = [u2, u]
             }
 
-            batch.draw(x, y, w, h, u, v, u2, v2)
+            batch.draw(x, y, w, h, u, v, u2, v2, [1, 1, 1, 1])
         },
         end_render() {
             batch.flush()

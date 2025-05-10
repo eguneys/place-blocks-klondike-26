@@ -9,6 +9,87 @@ import { Anim, anim_manager, AnimManager } from './anim'
 let l_anim: AnimManager
 let m_anim: AnimManager
 
+type SolveState = 'solved' | 'locked' | 'unlocked'
+
+type LevelInMap = {
+    state: SolveState
+    xy: XY
+    anim: Anim
+}
+
+let levels_in_map: LevelInMap[]
+
+const xy_levels: XY[] = [
+    [4, 232],
+    [0, 176],
+    [52, 228],
+    [0, 126],
+    [106, 220],
+    [48, 138],
+    [98, 174],
+    [47, 180],
+]
+
+const unlocks = [
+    [1, 2],
+    [3],
+    [4],
+    [5],
+    [6],
+    [7],
+    [7]
+]
+
+function make_level_in_map(i: number, state: SolveState): LevelInMap {
+
+    let xy: XY = xy_levels[i]
+
+    let anim = m_anim.add_anim(336, 96, 32, 32, { locked: '0.0-0', unlocked: '600ms0.1-1,200ms0.2-2', solved: '0.3-3' })
+    m_anim.tag_anim(anim, state)
+    m_anim.xy_anim(anim, ...xy, false)
+
+    return {
+        state,
+        xy,
+        anim,
+    }
+}
+
+let level_cursor: number
+let cursor_anim: Anim
+
+function init_map_levels() {
+
+    let states: SolveState[] = [
+        'unlocked',
+        'locked',
+        'locked',
+        'locked',
+        'locked',
+        'locked',
+        'locked',
+        'locked',
+    ]
+
+    level_cursor = 0
+    levels_in_map = []
+
+    levels_in_map.push(make_level_in_map(0, states[0]))
+    levels_in_map.push(make_level_in_map(1, states[1]))
+    levels_in_map.push(make_level_in_map(2, states[2]))
+    levels_in_map.push(make_level_in_map(3, states[3]))
+    levels_in_map.push(make_level_in_map(4, states[4]))
+    levels_in_map.push(make_level_in_map(5, states[5]))
+    levels_in_map.push(make_level_in_map(6, states[6]))
+    levels_in_map.push(make_level_in_map(7, states[7]))
+
+
+    cursor_anim = m_anim.add_anim(336, 96, 32, 32, { idle: '200ms1.1-1,100ms1.2-2,1.3-3,100ms1.2-2', disabled: '1.0-0' })
+
+    m_anim.tag_anim(cursor_anim, 'idle')
+}
+
+
 function init_level(l: Level) {
     level = l
 
@@ -95,6 +176,11 @@ let playing_music: (() => void) | undefined
 
 let _music_box: XYWH = [4, 4, 32, 32]
 
+let map_anim: Anim
+
+let _map_box: XYWH = [420, 220, 32, 32]
+
+
 type Cursor = XY
 let cursor: Cursor
 let drag: DragHandler
@@ -171,18 +257,38 @@ let is_update_progress: boolean
 
 function next_level() {
 
+    unlocks[level_cursor].forEach(_ => {
+        if (levels_in_map[_].state === 'locked') {
+            levels_in_map[_].state = 'unlocked'
+        }
+    })
+
+    i_level = -1
+}
+
+function select_level(i: number) {
+
+    if (levels_in_map[i].state === 'locked') {
+        return
+    }
+
+    i_level = i
     level_completed = false
 
     drag_block = undefined
 
-    let l1 = levels[i_level++]()
+    let l1 = levels[i_level]()
 
     init_level(l1)
 
 }
 
+function goto_map() {
+    i_level = -1
+}
+
 export function _init() {
-    i_level = 0
+    i_level = -1
     t = 0
 
     cursor = [0, 0]
@@ -195,13 +301,37 @@ export function _init() {
     blocks = []
     rule_blocks = []
 
-    next_level()
-
+    init_map_levels()
 
     music_anim = l_anim.add_anim(0, 112, 32, 32, { idle: '0.0-0', hover: '0.1-1', off: '0.2-2', off_hover: '0.3-3' })
     l_anim.tag_anim(music_anim, 'idle')
     l_anim.xy_anim(music_anim, _music_box[0], _music_box[1], false)
+
+
+    map_anim = l_anim.add_anim(272, 96, 32, 32, { idle: '0.0-0', hover: '0.1-1' })
+    l_anim.tag_anim(map_anim, 'idle')
+    l_anim.xy_anim(map_anim, _map_box[0], _map_box[1], false)
+
+
+    
+
+    wave_anims = [
+        m_anim.add_anim(256, 480, 64, 32, { idle: '200ms0.0-3' })
+    ]
+
+
+    wave_anims.forEach((_, i) => {
+        m_anim.tag_anim(_, 'idle')
+        m_anim.xy_anim(_, ...wave_xys[i], false)
+    })
 }
+
+const wave_xys: XY[] = [
+    [0, 0],
+]
+
+let wave_anims: Anim[]
+
 let music_anim: Anim
 
 function block_drag_box(block: Block): XYWH {
@@ -266,9 +396,73 @@ let start_music_once = true
 
 export function _update(delta: number) {
 
+    t += delta
+    if (drag.is_hovering) {
+        cursor = drag.is_hovering
+    }
+
+    if (i_level !== -1) {
+        update_gameplay(delta)
+    } else {
+        update_map(delta)
+    }
+
+    drag.update(delta)
+}
+
+function update_map(delta: number) {
+    m_anim.update_animations(delta)
+
+    levels_in_map.forEach(_ => update_level_in_map(_, delta))
+
+    if (drag.is_hovering) {
+        let hovering = levels_in_map.findIndex(_ => box_intersect(cursor_box(cursor), level_in_map_box(_)))
+
+        if (hovering !== -1) {
+
+        level_cursor = hovering
+        }
+    }
+    if (drag.is_just_down) {
+        let clicked = levels_in_map.findIndex(_ => box_intersect(cursor_box(cursor), level_in_map_box(_)))
+
+        if (clicked !== -1) {
+            select_level(clicked)
+        }
+    }
+
+    let selected_level = levels_in_map[level_cursor]
+    m_anim.xy_anim(cursor_anim, ...selected_level.xy, false)
+
+    m_anim.tag_anim(cursor_anim, selected_level.state === 'locked' ? 'disabled': 'idle')
+}
+
+function level_in_map_box(l: LevelInMap): XYWH {
+    return [...l.xy, 32, 32]
+}
+
+function update_level_in_map(l: LevelInMap, _delta: number) {
+
+    let [x, y] = l.xy
+    let cos = Math.cos(t * 0.01) * 1
+    let sin = Math.sin(t * 0.01) * 0
+    m_anim.xy_anim(l.anim, x + cos, y + sin, false)
+
+
+    if (l.state === 'unlocked') {
+        if (l.anim.tag === 'locked') {
+            m_anim.tag_anim(l.anim, 'unlocked')
+        }
+    }
+}
+
+function update_gameplay(delta: number) {
+
     if (drag.is_just_down) {
 
-        if (box_intersect(cursor_box(drag.is_just_down), _music_box)) {
+        if (box_intersect(cursor_box(drag.is_just_down), _map_box)) {
+            goto_map()
+        } else if (box_intersect(cursor_box(drag.is_just_down), _music_box)) {
             if (playing_music) {
                 playing_music()
                 playing_music = undefined
@@ -284,10 +478,8 @@ export function _update(delta: number) {
  
     }
 
-    t += delta
 
     if (drag.is_hovering) {
-        cursor = drag.is_hovering
 
         if (drag_block) {
             let x = cursor[0] + drag_block[1][0]
@@ -303,10 +495,13 @@ export function _update(delta: number) {
             })
         }
 
-        if (box_intersect(cursor_box(drag.is_hovering), _music_box)) {
+        if (box_intersect(cursor_box(drag.is_hovering), _map_box)) {
+            l_anim.tag_anim(map_anim, 'hover')
+        } else if (box_intersect(cursor_box(drag.is_hovering), _music_box)) {
             l_anim.tag_anim(music_anim, playing_music === undefined ? 'off_hover' :'hover')
         } else {
             l_anim.tag_anim(music_anim, playing_music === undefined ? 'off': 'idle')
+            l_anim.tag_anim(map_anim, 'idle')
         }
     }
 
@@ -348,7 +543,6 @@ export function _update(delta: number) {
 
     l_anim.update_animations(delta)
 
-    drag.update(delta)
 }
 
 
@@ -476,7 +670,7 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
 }
 
 export function _render() {
-    if (false) {
+    if (i_level !== -1) {
         render_level()
     } else {
         render_map()
@@ -497,6 +691,11 @@ function render_map() {
     m_anim.render_animations(g)
     render_cursor()
     g.end_render()
+
+
+    f.clear()
+
+
 }
 
 function render_level() {

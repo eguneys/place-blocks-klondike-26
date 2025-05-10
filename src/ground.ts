@@ -219,8 +219,6 @@ export type Level = {
 
 
 export let levels: (() => Level)[] = [
-    init_level_d2,
-    init_level_d1,
 
     init_level1,
     init_level2,
@@ -236,8 +234,8 @@ export let levels: (() => Level)[] = [
     init_level_c2,
     init_level_c3,
 
-
-
+    init_level_d1,
+    init_level_d2,
 ]
 
 
