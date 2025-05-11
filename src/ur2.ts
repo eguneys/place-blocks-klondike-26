@@ -5,6 +5,45 @@ import a from './audio'
 import { f } from './canvas'
 import { block_tiles, Blue, Green, ij2key, key2ij, Level, levels, Red, Yellow } from './ground'
 import { Anim, anim_manager, AnimLoopDefinition, AnimManager } from './anim'
+import { rnd_int } from './random'
+
+
+type Flock = {
+    xy: XY
+    chill_target: XY
+    anim: Anim
+    facing: number
+}
+
+let flocks: Flock[]
+
+function find_chill_target(): XY {
+    let [x, y] = xy_levels[rnd_int(0, xy_levels.length - 1)]
+
+    x += rnd_int(10, 40)
+    y += rnd_int(10, 40)
+
+    return [x, y]
+}
+
+
+
+function make_flock(y: number): Flock {
+
+    let xy: XY = find_chill_target()
+    let anim = m_anim.add_anim(464, 96, 16, 16, { flap: '100ms0.0-0,0.0-2,1.0-1', chill: '1.2-2'})
+
+    let res =  {
+        xy,
+        chill_target: find_chill_target(),
+        anim
+    }
+
+    m_anim.tag_anim(anim, 'flap')
+    m_anim.xy_anim(anim, ...xy, false)
+
+    return res
+}
 
 
 let i_transition_in: number
@@ -21,6 +60,9 @@ function init_transitions() {
     t_transition = 0
 
     transition_anims = []
+
+
+    flocks = []
 }
 
 function begin_transition(transition_out: number, transition_in: number) {
@@ -80,6 +122,13 @@ const xy_levels: XY[] = [
     [48, 138],
     [98, 174],
     [47, 180],
+
+
+    [112, 44],
+    [155, 46],
+    [79, 0],
+    [126, 0],
+    [173, 0],
 ]
 
 const unlocks = [
@@ -89,7 +138,12 @@ const unlocks = [
     [5],
     [6],
     [7],
-    [7]
+    [7],
+
+    [8],
+    [9, 10],
+    [12],
+    [11]
 ]
 
 function make_level_in_map(i: number, state: SolveState): LevelInMap {
@@ -121,19 +175,25 @@ function init_map_levels() {
         'locked',
         'locked',
         'locked',
+
+
+        'locked',
+        'locked',
+        'locked',
+        'locked',
+        'locked',
+        'locked',
     ]
 
     level_cursor = 0
     levels_in_map = []
 
-    levels_in_map.push(make_level_in_map(0, states[0]))
-    levels_in_map.push(make_level_in_map(1, states[1]))
-    levels_in_map.push(make_level_in_map(2, states[2]))
-    levels_in_map.push(make_level_in_map(3, states[3]))
-    levels_in_map.push(make_level_in_map(4, states[4]))
-    levels_in_map.push(make_level_in_map(5, states[5]))
-    levels_in_map.push(make_level_in_map(6, states[6]))
-    levels_in_map.push(make_level_in_map(7, states[7]))
+    for (let i = 0; i < 7; i++) {
+        levels_in_map.push(make_level_in_map(i, states[i]))
+    }
+    for (let i = 7; i < 13; i++) {
+        levels_in_map.push(make_level_in_map(i, states[i]))
+    }
 
 
     cursor_anim = m_anim.add_anim(336, 96, 32, 32, { idle: '200ms1.1-1,100ms1.2-2,1.3-3,100ms1.2-2', disabled: '1.0-0' })
@@ -507,6 +567,43 @@ function update_map(delta: number) {
     m_anim.xy_anim(cursor_anim, ...selected_level.xy, false)
 
     m_anim.tag_anim(cursor_anim, selected_level.state === 'locked' ? 'disabled': 'idle')
+
+
+    flocks.forEach(_ => update_flock(_, delta))
+
+
+    if (flocks.length < 20) {
+        flocks.push(make_flock(100))
+    }
+
+    if (drag.is_hovering) {
+        let flyes = flocks.filter(flock => flock.anim.tag === 'chill' && box_intersect(flock_box(flock), cursor_box(cursor)))
+
+        flyes.forEach(_ => _.chill_target = find_chill_target())
+    }
+}
+
+function flock_box(flock: Flock): XYWH {
+    return [flock.xy[0] - 16, flock.xy[1] - 16, 32, 32]
+}
+
+function update_flock(flock: Flock, delta: number) {
+    if (flock.xy[0] - flock.chill_target[0] === 0 && flock.xy[1] - flock.chill_target[1] === 0) {
+
+        m_anim.tag_anim(flock.anim, 'chill')
+    } else {
+        m_anim.tag_anim(flock.anim, 'flap')
+    }
+    flock.xy[0] = appr(flock.xy[0], flock.chill_target[0], 60 * delta/ 1000)
+    flock.xy[1] = appr(flock.xy[1], flock.chill_target[1], 60 * delta / 1000)
+
+    if (flock.xy[0] < flock.chill_target[0]) {
+        flock.facing = -1
+    } else {
+        flock.facing = 1
+    }
+
+    m_anim.xy_anim(flock.anim, ...flock.xy, flock.facing === 1)
 }
 
 function level_in_map_box(l: LevelInMap): XYWH {
