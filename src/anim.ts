@@ -10,8 +10,9 @@ type AnimDefinition = RawAnimDefinition
     | `${RawAnimDefinition},${RawAnimDefinition}`
     | `${RawAnimDefinition},${RawAnimDefinition},${RawAnimDefinition}`
     | `${RawAnimDefinition},${RawAnimDefinition},${RawAnimDefinition},${RawAnimDefinition}`
+    | `${RawAnimDefinition},${RawAnimDefinition},${RawAnimDefinition},${RawAnimDefinition},${RawAnimDefinition}`
 
-type AnimLoopDefinition = AnimDefinition | `${AnimDefinition}_${number}`
+export type AnimLoopDefinition = AnimDefinition | `${AnimDefinition}_${number}`
 
 export type Anim = {
     x: number
@@ -39,7 +40,13 @@ type Frame = {
     duration: number
 }
 
+
+let cache_defs: Record<AnimLoopDefinition, Frames> = {}
+
 function parse_anim_definition(def_loop: AnimLoopDefinition) {
+    if (cache_defs[def_loop]) {
+        return cache_defs[def_loop]
+    }
 
     let [def, loop] = def_loop.split('_')
 
@@ -68,11 +75,14 @@ function parse_anim_definition(def_loop: AnimLoopDefinition) {
 
     let frames = res.flatMap(parse_frames)
 
-    return {
+    let _res: Frames = {
         frames,
         loop: loop ? parseInt(loop) : -1
     }
 
+    cache_defs[def_loop] = _res
+
+    return _res
 }
 
 type AnimOptions = {
@@ -175,7 +185,7 @@ export function anim_manager(): AnimManager {
         let sx = anim.sx + frame[0] * anim.w
         let sy = anim.sy + frame[1] * anim.h
 
-        gl.draw(anim.x, anim.y, anim.w, anim.h, sx, sy, anim.flip_x, anim.theta)
+        gl.draw(anim.x, anim.y, anim.w, anim.h, sx, sy, anim.flip_x)
     }
 
     function update_animations(delta: number) {

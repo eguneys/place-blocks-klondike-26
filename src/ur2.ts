@@ -4,7 +4,59 @@ import { g } from './webgl/gl_init'
 import a from './audio'
 import { f } from './canvas'
 import { block_tiles, Blue, Green, ij2key, key2ij, Level, levels, Red, Yellow } from './ground'
-import { Anim, anim_manager, AnimManager } from './anim'
+import { Anim, anim_manager, AnimLoopDefinition, AnimManager } from './anim'
+
+
+let i_transition_in: number
+let i_transition_out: number
+let t_transition: number
+
+let t_anim: AnimManager
+
+
+function init_transitions() {
+
+    i_transition_in = 0
+    i_transition_out = 0
+    t_transition = 0
+
+    transition_anims = []
+}
+
+function begin_transition(transition_out: number, transition_in: number) {
+    i_transition_in = transition_in
+    i_transition_out = -transition_out
+    t_transition = transition_duration * 8
+
+    put_anims_transition_fade_in_out(false)
+}
+
+let transition_anims: Anim[]
+
+let transition_duration = 100
+
+function put_anims_transition_fade_in_out(is_fade_in: boolean) {
+
+    transition_anims.forEach(_ => t_anim.remove_anim(_))
+    transition_anims = []
+
+    let phase = Math.random() * 12
+    let d = transition_duration
+    for (let i = 0; i < 40; i++) {
+        for (let j = 0; j < 20; j++) {
+
+            let delay = 100 + Math.floor(Math.abs(Math.sin((i + j + phase) * 50)) * 160)
+            let fade_out: AnimLoopDefinition = `${delay}ms1.2-2,${d}ms0.0-2,${d}ms1.0-1_1`
+            let fade_in: AnimLoopDefinition = `${d}ms1.1-1,${d}ms0.2-2,${d}ms0.1-1,${d}ms0.0-0,${d}ms1.2-2_1`
+            let a = t_anim.add_anim(416, 448, 32, 32, { fade_out, fade_in })
+
+            t_anim.tag_anim(a, is_fade_in ? 'fade_in' : 'fade_out')
+            t_anim.xy_anim(a, i * 33, -24 + i % 2 * 8 + j * 33, false)
+            transition_anims.push(a)
+        }
+    }
+}
+
 
 let l_anim: AnimManager
 let m_anim: AnimManager
@@ -86,7 +138,10 @@ function init_map_levels() {
 
     cursor_anim = m_anim.add_anim(336, 96, 32, 32, { idle: '200ms1.1-1,100ms1.2-2,1.3-3,100ms1.2-2', disabled: '1.0-0' })
 
+
+    let selected_level = levels_in_map[level_cursor]
     m_anim.tag_anim(cursor_anim, 'idle')
+    m_anim.xy_anim(cursor_anim, ...selected_level.xy, false)
 }
 
 
@@ -257,13 +312,18 @@ let is_update_progress: boolean
 
 function next_level() {
 
-    unlocks[level_cursor].forEach(_ => {
-        if (levels_in_map[_].state === 'locked') {
-            levels_in_map[_].state = 'unlocked'
-        }
-    })
+    levels_in_map[level_cursor].state = 'solved'
+
+    if (unlocks[level_cursor]) {
+        unlocks[level_cursor].forEach(_ => {
+            if (levels_in_map[_].state === 'locked') {
+                levels_in_map[_].state = 'unlocked'
+            }
+        })
+    }
 
     i_level = -1
+    begin_transition(2, 1)
 }
 
 function select_level(i: number) {
@@ -281,6 +341,7 @@ function select_level(i: number) {
 
     init_level(l1)
 
+    begin_transition(1, 2)
 }
 
 function goto_map() {
@@ -298,6 +359,8 @@ export function _init() {
     l_anim = anim_manager()
     m_anim = anim_manager()
 
+    t_anim = anim_manager()
+
     blocks = []
     rule_blocks = []
 
@@ -313,24 +376,8 @@ export function _init() {
     l_anim.xy_anim(map_anim, _map_box[0], _map_box[1], false)
 
 
-    
-
-    wave_anims = [
-        m_anim.add_anim(256, 480, 64, 32, { idle: '200ms0.0-3' })
-    ]
-
-
-    wave_anims.forEach((_, i) => {
-        m_anim.tag_anim(_, 'idle')
-        m_anim.xy_anim(_, ...wave_xys[i], false)
-    })
+    init_transitions()
 }
-
-const wave_xys: XY[] = [
-    [0, 0],
-]
-
-let wave_anims: Anim[]
 
 let music_anim: Anim
 
@@ -401,6 +448,11 @@ export function _update(delta: number) {
         cursor = drag.is_hovering
     }
 
+    if (i_transition_out !== 0) {
+        update_transition(delta)
+
+    } 
+    
     if (i_level !== -1) {
         update_gameplay(delta)
     } else {
@@ -408,6 +460,26 @@ export function _update(delta: number) {
     }
 
     drag.update(delta)
+}
+
+function update_transition(delta: number) {
+    if (t_transition > 0) {
+
+        t_transition = appr(t_transition, 0, delta)
+
+        if (t_transition === 0) {
+            if (i_transition_out < 0) {
+                i_transition_out = i_transition_in
+                put_anims_transition_fade_in_out(true)
+                t_transition = 160 * 4
+            } else {
+                i_transition_out = 0
+                i_transition_in = 0
+            }
+        }
+    }
+
+    t_anim.update_animations(delta)
 }
 
 function update_map(delta: number) {
@@ -454,6 +526,11 @@ function update_level_in_map(l: LevelInMap, _delta: number) {
             m_anim.tag_anim(l.anim, 'unlocked')
         }
     }
+    if (l.state === 'solved') {
+        if (l.anim.tag === 'unlocked') {
+            m_anim.tag_anim(l.anim, 'solved')
+        }
+    }
 }
 
 function update_gameplay(delta: number) {
@@ -462,6 +539,7 @@ function update_gameplay(delta: number) {
 
         if (box_intersect(cursor_box(drag.is_just_down), _map_box)) {
             goto_map()
+            begin_transition(2, 1)
         } else if (box_intersect(cursor_box(drag.is_just_down), _music_box)) {
             if (playing_music) {
                 playing_music()
@@ -670,11 +748,29 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
 }
 
 export function _render() {
+
+    if (Math.abs(i_transition_out) === 1) {
+        render_map()
+        render_transition()
+        return
+    } else if (Math.abs(i_transition_out) === 2) {
+        render_level()
+        render_transition()
+        return
+    }
+
     if (i_level !== -1) {
         render_level()
     } else {
         render_map()
     }
+
+}
+
+function render_transition() {
+    g.begin_render()
+    t_anim.render_animations(g)
+    g.end_render()
 }
 
 function render_map() {
@@ -768,7 +864,7 @@ function render_rule_block(block: RuleBlock) {
     }
 
     if (Object.is(block.i_progress, -0) || block.i_progress === 1) {
-        g.draw(x + 4, y + 28, 24, 18, 416, 239,  false)
+        g.draw(x + 4, y + 28, 24, 18, 304, 64,  false)
     }
 }
 

@@ -37,4 +37,5 @@ body,
 #app .pixelated {
   image-rendering: pixelated;
   pointer-events: all;
+  cursor: none;
 }
