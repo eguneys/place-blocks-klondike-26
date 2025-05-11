@@ -36,7 +36,8 @@ function make_flock(y: number): Flock {
     let res =  {
         xy,
         chill_target: find_chill_target(),
-        anim
+        anim,
+        facing: 1
     }
 
     m_anim.tag_anim(anim, 'flap')
@@ -630,8 +631,7 @@ function update_level_in_map(l: LevelInMap, _delta: number) {
     }
 }
 
-function update_gameplay(delta: number) {
-
+function update_music_box() {
     if (drag.is_just_down) {
 
         if (box_intersect(cursor_box(drag.is_just_down), _map_box)) {
@@ -653,8 +653,32 @@ function update_gameplay(delta: number) {
  
     }
 
+    if (drag.is_hovering) {
+
+        if (box_intersect(cursor_box(drag.is_hovering), _music_box)) {
+            l_anim.tag_anim(music_anim, playing_music === undefined ? 'off_hover' : 'hover')
+        } else {
+
+            l_anim.tag_anim(music_anim, playing_music === undefined ? 'off' : 'idle')
+        }
+
+    }
+}
+
+function update_gameplay(delta: number) {
+
+    update_music_box()
+
 
     if (drag.is_hovering) {
+
+        if (box_intersect(cursor_box(drag.is_hovering), _map_box)) {
+            l_anim.tag_anim(map_anim, 'hover')
+        } else {
+            l_anim.tag_anim(map_anim, 'idle')
+        }
+
+
 
         if (drag_block) {
             let x = cursor[0] + drag_block[1][0]
@@ -670,14 +694,6 @@ function update_gameplay(delta: number) {
             })
         }
 
-        if (box_intersect(cursor_box(drag.is_hovering), _map_box)) {
-            l_anim.tag_anim(map_anim, 'hover')
-        } else if (box_intersect(cursor_box(drag.is_hovering), _music_box)) {
-            l_anim.tag_anim(music_anim, playing_music === undefined ? 'off_hover' :'hover')
-        } else {
-            l_anim.tag_anim(music_anim, playing_music === undefined ? 'off': 'idle')
-            l_anim.tag_anim(map_anim, 'idle')
-        }
     }
 
     if (drag.is_down) {
