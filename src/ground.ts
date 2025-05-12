@@ -330,7 +330,7 @@ export function init_level_d6(): Level {
 
     return {
         name: 'Floor Corners',
-        world: [4, 2],
+        world: [3, 5],
         ground,
         rules
     }
@@ -417,7 +417,7 @@ export function init_level_d7(): Level {
 
     return {
         name: 'Corners Square',
-        world: [4, 2],
+        world: [3, 6],
         ground,
         rules
     }
@@ -478,6 +478,7 @@ export function init_level_d5(): Level {
     ground.add_block(Yellow, 20, 8)
     ground.add_block(Yellow, 20, 10)
 
+    ground.add_block(Yellow, 10, 0)
     ground.add_block(Yellow, 12, 0)
     ground.add_block(Yellow, 14, 0)
     ground.add_block(Yellow, 16, 0)
@@ -497,7 +498,7 @@ export function init_level_d5(): Level {
 
     return {
         name: 'Square',
-        world: [4, 2],
+        world: [3, 4],
         ground,
         rules
     }
@@ -567,7 +568,7 @@ export function init_level_d4(): Level {
 
     return {
         name: 'Green',
-        world: [4, 2],
+        world: [3, 3],
         ground,
         rules
     }
@@ -636,8 +637,8 @@ export function init_level_d3(): Level {
     }
 
     return {
-        name: '2x2',
-        world: [4, 2],
+        name: 'Group',
+        world: [3, 2],
         ground,
         rules
     }
@@ -718,7 +719,7 @@ export function init_level_d2(): Level {
 
     return {
         name: 'Yellow and Groups',
-        world: [4, 2],
+        world: [3, 1],
         ground,
         rules
     }
@@ -770,7 +771,7 @@ export function init_level_d1(): Level {
 
     return {
         name: 'Yellow',
-        world: [4, 1],
+        world: [2, 5],
         ground,
         rules
     }
@@ -822,7 +823,7 @@ export function init_level_c3(): Level {
 
     return {
         name: 'Group 1 0',
-        world: [2, 1],
+        world: [2, 3],
         ground,
         rules
     }
@@ -904,7 +905,7 @@ export function init_level_c1(): Level {
 
     return {
         name: 'Top Center',
-        world: [3, 1],
+        world: [2, 4],
         ground,
         rules
     }
@@ -934,7 +935,7 @@ export function init_level_b1(): Level {
 
     return {
         name: 'One Group',
-        world: [2, 1],
+        world: [1, 8],
         ground,
         rules
     }
