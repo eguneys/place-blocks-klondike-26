@@ -1,5 +1,7 @@
 import { XY } from "./util"
 
+let debug = false
+
 export const Yellow = 1
 export const Blue = 2
 export const Green = 3
@@ -129,6 +131,9 @@ export function neighbor_tiles(x: number, y: number, wh: XY): XY[] {
         push_xy(x + 1, y + 4)
         push_xy(x - 1, y + 2)
         push_xy(x - 1, y + 3)
+
+        push_xy(x + 2, y - 1)
+        push_xy(x + 3, y - 1)
     }
     return res
 }
@@ -220,6 +225,7 @@ export type Level = {
 
 export let levels: (() => Level)[] = [
 
+
     init_level1,
     init_level2,
     init_level3,
@@ -236,7 +242,408 @@ export let levels: (() => Level)[] = [
 
     init_level_d1,
     init_level_d2,
+    init_level_d3,
+    init_level_d4,
+
+
+    init_level_d5,
+    init_level_d6,
+    init_level_d7,
 ]
+
+
+export function init_level_d6(): Level {
+
+    let ground = new Ground()
+
+    ground.add_block(Red, 0, 8)
+    ground.add_block(Red, 10, 8)
+    ground.add_block(Red, 16, 8)
+    ground.add_block(Red, 6, 2)
+    ground.add_block(Green, 10, 2)
+    ground.add_block(Green, 12, 2)
+
+    ground.add_block(Yellow, 0, 0)
+    ground.add_block(Yellow, 2, 0)
+    ground.add_block(Yellow, 4, 0)
+    ground.add_block(Yellow, 6, 0)
+
+    ground.add_block(Green, 0, 2)
+    ground.add_block(Green, 2, 2)
+    ground.add_block(Green, 4, 2)
+
+    ground.add_block(Green, 4, 8)
+    ground.add_block(Green, 6, 8)
+    ground.add_block(Green, 8, 8)
+
+    ground.add_block(Green, 14, 2)
+    ground.add_block(Green, 16, 2)
+
+
+    ground.add_block(Green, 18, 2)
+
+    ground.add_block(Blue, 0, 12)
+    ground.add_block(Blue, 18, 12)
+    ground.add_block(Blue, 18, 0)
+
+
+    ground.add_block(Blue, 0, 6)
+    ground.add_block(Blue, 4, 6)
+    ground.add_block(Blue, 8, 6)
+    ground.add_block(Blue, 12, 6)
+    ground.add_block(Blue, 16, 6)
+
+    ground.add_block(Yellow, 4, 12)
+    ground.add_block(Yellow, 6, 12)
+    ground.add_block(Yellow, 8, 12)
+    ground.add_block(Yellow, 10, 12)
+    ground.add_block(Yellow, 12, 12)
+
+    ground.add_block(Green, 14, 8)
+    ground.add_block(Green, 20, 8)
+
+    ground.add_block(Yellow, 12, 0)
+    ground.add_block(Yellow, 14, 0)
+    ground.add_block(Yellow, 16, 0)
+
+
+    ground.add_block(Yellow, 20, 2)
+    ground.add_block(Yellow, 20, 4)
+    ground.add_block(Yellow, 20, 6)
+
+
+    let rules: Rule[] = [{
+        icon: 'on_the_floor',
+        color: Green,
+        progress: RULE_on_floor(Green)
+    }]
+
+    rules.push({
+        icon: 'corners',
+        color: Green,
+        progress: RULE_corners4(Green)
+    })
+
+    if (debug) {
+        rules = []
+    }
+
+    return {
+        name: 'Floor Corners',
+        world: [4, 2],
+        ground,
+        rules
+    }
+
+}
+
+
+
+export function init_level_d7(): Level {
+
+    let ground = new Ground()
+
+    ground.add_block(Red, 0, 8)
+    ground.add_block(Red, 10, 8)
+    ground.add_block(Red, 16, 8)
+    ground.add_block(Red, 6, 2)
+    ground.add_block(Green, 10, 2)
+    ground.add_block(Green, 12, 2)
+
+    ground.add_block(Yellow, 0, 0)
+    ground.add_block(Yellow, 2, 0)
+    ground.add_block(Yellow, 4, 0)
+    ground.add_block(Yellow, 6, 0)
+
+    ground.add_block(Green, 0, 2)
+    ground.add_block(Green, 2, 2)
+    ground.add_block(Green, 4, 2)
+
+    ground.add_block(Green, 4, 8)
+    ground.add_block(Green, 6, 8)
+    ground.add_block(Green, 8, 8)
+
+    ground.add_block(Green, 14, 2)
+    ground.add_block(Green, 16, 2)
+
+
+    ground.add_block(Green, 18, 2)
+
+    ground.add_block(Blue, 0, 12)
+    ground.add_block(Blue, 18, 12)
+    ground.add_block(Blue, 18, 0)
+
+
+    ground.add_block(Blue, 0, 6)
+    ground.add_block(Blue, 4, 6)
+    ground.add_block(Blue, 8, 6)
+    ground.add_block(Blue, 12, 6)
+    ground.add_block(Blue, 16, 6)
+
+    ground.add_block(Yellow, 4, 12)
+    ground.add_block(Yellow, 6, 12)
+    ground.add_block(Yellow, 8, 12)
+    ground.add_block(Yellow, 10, 12)
+    ground.add_block(Yellow, 12, 12)
+
+    ground.add_block(Green, 14, 8)
+    ground.add_block(Green, 20, 8)
+
+    ground.add_block(Yellow, 12, 0)
+    ground.add_block(Yellow, 14, 0)
+    ground.add_block(Yellow, 16, 0)
+
+
+    ground.add_block(Yellow, 20, 2)
+    ground.add_block(Yellow, 20, 4)
+    ground.add_block(Yellow, 20, 6)
+
+
+    let rules: Rule[] = [{
+        icon: 'square',
+        color: Red,
+        progress: RULE_square(Red)
+    }]
+
+    rules.push({
+        icon: 'corners',
+        color: Yellow,
+        progress: RULE_corners4(Yellow)
+    })
+
+    if (debug) {
+        rules = []
+    }
+
+    return {
+        name: 'Corners Square',
+        world: [4, 2],
+        ground,
+        rules
+    }
+
+}
+
+
+
+export function init_level_d5(): Level {
+
+    let ground = new Ground()
+
+    ground.add_block(Red, 0, 8)
+    ground.add_block(Red, 10, 8)
+    ground.add_block(Red, 16, 8)
+    ground.add_block(Red, 6, 2)
+    ground.add_block(Red, 10, 2)
+
+    ground.add_block(Yellow, 0, 0)
+    ground.add_block(Yellow, 2, 0)
+    ground.add_block(Yellow, 4, 0)
+    ground.add_block(Yellow, 6, 0)
+
+    ground.add_block(Green, 0, 2)
+    ground.add_block(Green, 2, 2)
+    ground.add_block(Green, 4, 2)
+
+    ground.add_block(Green, 4, 8)
+    ground.add_block(Green, 6, 8)
+    ground.add_block(Green, 8, 8)
+
+    ground.add_block(Blue, 14, 2)
+    ground.add_block(Blue, 14, 4)
+
+
+    ground.add_block(Blue, 18, 2)
+    ground.add_block(Blue, 18, 4)
+
+    ground.add_block(Blue, 0, 12)
+    ground.add_block(Blue, 18, 12)
+    ground.add_block(Blue, 18, 0)
+
+
+    ground.add_block(Blue, 0, 6)
+    ground.add_block(Blue, 4, 6)
+    ground.add_block(Blue, 8, 6)
+    ground.add_block(Blue, 12, 6)
+    ground.add_block(Blue, 16, 6)
+
+    ground.add_block(Yellow, 4, 12)
+    ground.add_block(Yellow, 6, 12)
+    ground.add_block(Yellow, 8, 12)
+    ground.add_block(Yellow, 10, 12)
+    ground.add_block(Yellow, 12, 12)
+
+
+    ground.add_block(Yellow, 14, 10)
+    ground.add_block(Yellow, 20, 8)
+    ground.add_block(Yellow, 20, 10)
+
+    ground.add_block(Yellow, 12, 0)
+    ground.add_block(Yellow, 14, 0)
+    ground.add_block(Yellow, 16, 0)
+
+
+
+
+    let rules: Rule[] = [{
+        icon: 'square',
+        color: Yellow,
+        progress: RULE_square(Yellow)
+    }]
+
+    if (debug) {
+        rules = []
+    }
+
+    return {
+        name: 'Square',
+        world: [4, 2],
+        ground,
+        rules
+    }
+}
+
+
+export function init_level_d4(): Level {
+
+    let ground = new Ground()
+
+    ground.add_block(Red, 0, 8)
+    ground.add_block(Red, 10, 8)
+    ground.add_block(Red, 16, 8)
+    ground.add_block(Red, 6, 2)
+    ground.add_block(Red, 10, 2)
+
+    ground.add_block(Yellow, 0, 0)
+    ground.add_block(Yellow, 2, 0)
+    ground.add_block(Yellow, 4, 0)
+    ground.add_block(Yellow, 6, 0)
+
+    ground.add_block(Green, 0, 2)
+    ground.add_block(Green, 2, 2)
+    ground.add_block(Green, 4, 2)
+
+    ground.add_block(Green, 4, 8)
+    ground.add_block(Green, 6, 8)
+    ground.add_block(Green, 8, 8)
+
+    ground.add_block(Blue, 14, 2)
+    ground.add_block(Blue, 14, 4)
+
+
+    ground.add_block(Blue, 18, 2)
+    ground.add_block(Blue, 18, 4)
+
+    ground.add_block(Blue, 0, 12)
+    ground.add_block(Blue, 18, 12)
+    ground.add_block(Blue, 18, 0)
+
+
+    ground.add_block(Blue, 0, 6)
+    ground.add_block(Blue, 4, 6)
+    ground.add_block(Blue, 8, 6)
+    ground.add_block(Blue, 12, 6)
+    ground.add_block(Blue, 16, 6)
+
+    ground.add_block(Blue, 4, 12)
+    ground.add_block(Blue, 8, 12)
+    ground.add_block(Blue, 12, 12)
+
+    ground.add_block(Yellow, 14, 8)
+    ground.add_block(Yellow, 14, 10)
+    ground.add_block(Yellow, 20, 8)
+    ground.add_block(Yellow, 20, 10)
+
+
+    let rules: Rule[] = [{
+        icon: 'no_group',
+        color: Green,
+        progress: RULE_no_group(Green)
+    }]
+
+    if (debug) {
+        rules = []
+    }
+
+    return {
+        name: 'Green',
+        world: [4, 2],
+        ground,
+        rules
+    }
+}
+
+
+export function init_level_d3(): Level {
+
+    let ground = new Ground()
+
+    ground.add_block(Red, 0, 8)
+    ground.add_block(Red, 10, 8)
+    ground.add_block(Red, 16, 8)
+    ground.add_block(Red, 6, 2)
+    ground.add_block(Red, 10, 2)
+
+    ground.add_block(Yellow, 0, 0)
+    ground.add_block(Yellow, 2, 0)
+    ground.add_block(Yellow, 4, 0)
+    ground.add_block(Yellow, 6, 0)
+
+    ground.add_block(Green, 0, 2)
+    ground.add_block(Green, 2, 2)
+    ground.add_block(Green, 4, 2)
+
+    ground.add_block(Green, 4, 8)
+    ground.add_block(Green, 6, 8)
+    ground.add_block(Green, 8, 8)
+
+    ground.add_block(Blue, 14, 2)
+    ground.add_block(Blue, 14, 4)
+
+
+    ground.add_block(Blue, 18, 2)
+    ground.add_block(Blue, 18, 4)
+
+    ground.add_block(Blue, 0, 12)
+    ground.add_block(Blue, 18, 12)
+    ground.add_block(Blue, 18, 0)
+
+
+    ground.add_block(Blue, 0, 6)
+    ground.add_block(Blue, 4, 6)
+    ground.add_block(Blue, 8, 6)
+    ground.add_block(Blue, 12, 6)
+    ground.add_block(Blue, 16, 6)
+
+    ground.add_block(Blue, 4, 12)
+    ground.add_block(Blue, 8, 12)
+    ground.add_block(Blue, 12, 12)
+
+    ground.add_block(Yellow, 14, 8)
+    ground.add_block(Yellow, 14, 10)
+    ground.add_block(Yellow, 20, 8)
+    ground.add_block(Yellow, 20, 10)
+
+
+    let rules: Rule[] = [{
+        icon: 'one_group',
+        color: Red,
+        progress: RULE_one_group(Red)
+    }]
+
+    if (debug) {
+        rules = []
+    }
+
+    return {
+        name: '2x2',
+        world: [4, 2],
+        ground,
+        rules
+    }
+}
+
+
 
 
 export function init_level_d2(): Level {
@@ -244,7 +651,7 @@ export function init_level_d2(): Level {
     let ground = new Ground()
 
     ground.add_block(Red, 0, 8)
-    ground.add_block(Red, 9, 8)
+    ground.add_block(Red, 10, 8)
     ground.add_block(Red, 16, 8)
     ground.add_block(Red, 6, 2)
     ground.add_block(Red, 10, 2)
@@ -301,6 +708,9 @@ export function init_level_d2(): Level {
 
 
 
+    if (debug) {
+        rules = []
+    }
 
 
 
@@ -321,7 +731,7 @@ export function init_level_d1(): Level {
     let ground = new Ground()
 
     ground.add_block(Red, 0, 8)
-    ground.add_block(Red, 9, 8)
+    ground.add_block(Red, 10, 8)
     ground.add_block(Red, 16, 8)
     ground.add_block(Red, 6, 2)
     ground.add_block(Red, 10, 2)
@@ -372,7 +782,7 @@ export function init_level_c3(): Level {
     let ground = new Ground()
 
     ground.add_block(Red, 0, 8)
-    ground.add_block(Red, 9, 8)
+    ground.add_block(Red, 10, 8)
     ground.add_block(Red, 16, 8)
     ground.add_block(Red, 5, 2)
 

@@ -130,6 +130,13 @@ const xy_levels: XY[] = [
     [79, 0],
     [126, 0],
     [173, 0],
+
+    [292, 66],
+    [320, 36],
+    [357, 4],
+    [377, 48],
+    [338, 76],
+    [424, 7],
 ]
 
 const unlocks = [
@@ -144,7 +151,15 @@ const unlocks = [
     [8],
     [9, 10],
     [12],
-    [11]
+    [11],
+
+    [],
+
+    [13],
+    [14],
+    [15],
+    [16],
+    [17, 18],
 ]
 
 function make_level_in_map(i: number, state: SolveState): LevelInMap {
@@ -184,6 +199,11 @@ function init_map_levels() {
         'locked',
         'locked',
         'locked',
+        'locked',
+        'locked',
+        'locked',
+        'locked',
+        'locked',
     ]
 
     level_cursor = 0
@@ -195,6 +215,10 @@ function init_map_levels() {
     for (let i = 7; i < 13; i++) {
         levels_in_map.push(make_level_in_map(i, states[i]))
     }
+    for (let i = 13; i < 19; i++) {
+        levels_in_map.push(make_level_in_map(i, states[i]))
+    }
+
 
 
     cursor_anim = m_anim.add_anim(336, 96, 32, 32, { idle: '200ms1.1-1,100ms1.2-2,1.3-3,100ms1.2-2', disabled: '1.0-0' })
@@ -247,7 +271,8 @@ function init_level(l: Level) {
             right: '0.1-1',  corners: '0.2-2',  no_top: '0.3-3',  no_center: '1.0-0',  
             on_the_floor: '1.1-1',  '4x4': '1.2-2',  
             one_group: '1.3-3',
-            no_group: '1.4-4'
+            no_group: '1.4-4',
+            square: '2.0-0'
         })
 
 
@@ -385,6 +410,7 @@ function next_level() {
 
     i_level = -1
     begin_transition(2, 1)
+
 }
 
 function select_level(i: number) {
@@ -438,6 +464,8 @@ export function _init() {
 
 
     init_transitions()
+
+    //select_level(0)
 }
 
 let music_anim: Anim
@@ -746,7 +774,7 @@ function update_rule_block(block: RuleBlock, i: number, delta: number) {
 
     if (block.t_reveal === 0 && !block.revealed) {
 
-        if (block.i_progress > 0.5) {
+        if (block.i_progress > 0.3) {
             block.t_reveal = 200
         }
         if (block.i_progress < 0 && block.i_progress > -0.5) {
