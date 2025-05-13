@@ -7,6 +7,7 @@ import { block_tiles, Blue, Green, ij2key, key2ij, Level, levels, Red, Yellow } 
 import { Anim, anim_manager, AnimLoopDefinition, AnimManager } from './anim'
 import { rnd_int } from './random'
 
+let nb_blocks_pushed: number
 
 type Flock = {
     xy: XY
@@ -110,6 +111,8 @@ type LevelInMap = {
     state: SolveState
     xy: XY
     anim: Anim
+    fire_anim?: Anim
+    t_unlocked: number
 }
 
 let levels_in_map: LevelInMap[]
@@ -174,6 +177,7 @@ function make_level_in_map(i: number, state: SolveState): LevelInMap {
         state,
         xy,
         anim,
+        t_unlocked: 0
     }
 }
 
@@ -398,12 +402,17 @@ let is_update_progress: boolean
 
 function next_level() {
 
+    if (level_cursor === levels_in_map.length - 1) {
+        is_over = true
+        return
+    }
+
     levels_in_map[level_cursor].state = 'solved'
 
     if (unlocks[level_cursor]) {
         unlocks[level_cursor].forEach(_ => {
             if (levels_in_map[_].state === 'locked') {
-                levels_in_map[_].state = 'unlocked'
+                levels_in_map[_].t_unlocked = 2400
             }
         })
     }
@@ -435,7 +444,11 @@ function goto_map() {
     i_level = -1
 }
 
+let is_over: boolean
+
 export function _init() {
+    nb_blocks_pushed = 0
+    is_over = false
     i_level = -1
     t = 0
 
@@ -610,6 +623,7 @@ function update_map(delta: number) {
 
         flyes.forEach(_ => _.chill_target = find_chill_target())
     }
+
 }
 
 function flock_box(flock: Flock): XYWH {
@@ -639,7 +653,27 @@ function level_in_map_box(l: LevelInMap): XYWH {
     return [...l.xy, 32, 32]
 }
 
-function update_level_in_map(l: LevelInMap, _delta: number) {
+function update_level_in_map(l: LevelInMap, delta: number) {
+
+    if (l.t_unlocked > 0) {
+        l.t_unlocked = appr(l.t_unlocked, 0, delta)
+
+        l.state = 'unlocked'
+        if (l.t_unlocked === 0) {
+            m_anim.remove_anim(l.fire_anim!)
+            l.fire_anim = undefined
+        } else if (t_transition === 0) {
+            if (!l.fire_anim) {
+                l.fire_anim = m_anim.add_anim(336, 160, 64, 32, { idle: '100ms0.0-1,200ms1.0-1,300ms2.0-1,100ms3.0-2' })
+                m_anim.tag_anim(l.fire_anim, 'idle')
+                let [x, y] = l.xy
+                x -= 16
+                m_anim.xy_anim(l.fire_anim, x, y, false)
+
+            }
+
+        }
+    }
 
     let [x, y] = l.xy
     let cos = Math.cos(t * 0.01) * 1
@@ -885,10 +919,31 @@ function block_pixel_perfect_lerp(block: Block, x: number, y: number, delta: num
 
         level.ground.key_new_key(key, new_key)
         is_update_progress = true
+
+
+        nb_blocks_pushed+= 1
     }
 }
 
+function render_thanks() {
+    
+    g.clear()
+
+    f.clear()
+
+    f.text("Thank you for playing.", 1920/2, 1080 / 2 - 300, 180, 'gold', 'center')
+    let n = f.text('Total' , 100, 1080 / 2 + 300 + 20, 100, 'white', 'left')
+    let m = f.text(`${nb_blocks_pushed}` , 100 + n + 30, 1080 / 2 + 300, 120, 'orange', 'left')
+    f.text('blocks pushed. Nice job!' , 100 + n + m + 60, 1080 / 2 + 300 + 20, 100, 'white', 'left')
+    f.text("Don't forget to comment, if the last puzzles were too hard, or you would like to see more.", 1920/2, 1080 - 100, 32, 'white', 'center')
+}
+
 export function _render() {
+
+    if (is_over) {
+        render_thanks()
+        return
+    }
 
     if (Math.abs(i_transition_out) === 1) {
         render_map()
